@@ -644,8 +644,8 @@
 // Only strip sentence punctuation (commas, periods, exclamation, question, semicolon, colon, ellipsis)
 // NOTE: 、(enumeration comma) is kept — it's used within sentences, not as a break
 // NOTE: . is handled separately to preserve decimal points like 1.8
-const CJK_STRIP = /[\uFF0C\u3002\uFF01\uFF1F\uFF1B\uFF1A\u2026]/g;
-const ALL_STRIP_BASE = /[\uFF0C\u3002\uFF01\uFF1F\uFF1B\uFF1A\u2026,!?;:]/g;
+const CJK_STRIP = /[\uFF0C\u3002\uFF01\uFF1F\uFF1B\uFF1A\u2026*<>]/g;
+const ALL_STRIP_BASE = /[\uFF0C\u3002\uFF01\uFF1F\uFF1B\uFF1A\u2026,!?;:*<>]/g;
 
 // Punctuation that triggers line breaks (split AFTER these)
 // No 、(enumeration), no . (could be decimal)
@@ -672,7 +672,7 @@ function stripPunct(text, mode) {
   if (mode === 'strip-cjk') return text.replace(CJK_STRIP, '');
   // Strip ALL mode: handle commas and dots specially to preserve numeric usage
   // First pass: strip all punct EXCEPT commas (handle commas manually like dots)
-  const ALL_STRIP_NO_COMMA = /[\uFF0C\u3002\uFF01\uFF1F\uFF1B\uFF1A\u2026!?;:]/g;
+  const ALL_STRIP_NO_COMMA = /[\uFF0C\u3002\uFF01\uFF1F\uFF1B\uFF1A\u2026!?;:*<>]/g;
   let result = text.replace(ALL_STRIP_NO_COMMA, '');
   // Now strip commas that are NOT inside numbers, and dots that are NOT decimal
   let out = '';
@@ -868,6 +868,7 @@ function stripENPS(text) {
     .replace(/<[^>]*>/g, '')
     .replace(/\[[^\]]*\]/g, '')
     .replace(/\(\([^)]*\)\)/g, '')
+    .replace(/\*/g, '')
     .replace(/\s{2,}/g, ' ')
     .trim();
 }

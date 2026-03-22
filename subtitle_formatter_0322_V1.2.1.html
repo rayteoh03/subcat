@@ -1,0 +1,1675 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SubCat — Subtitle Line Formatter</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=Space+Mono:wght@400;700&family=Nunito:wght@400;600;700;800&family=Silkscreen:wght@400;700&display=swap');
+
+  :root {
+    --bg: #fef6ee;
+    --surface: #ffffff;
+    --surface-2: #fff8f2;
+    --surface-3: #fef0e4;
+    --border: #f0d9c4;
+    --border-focus: #f4845f;
+    --text: #4a3728;
+    --text-dim: #9a7e6b;
+    --text-muted: #c4a890;
+    --accent: #f4845f;
+    --accent-light: #ffa07a;
+    --accent-glow: rgba(244, 132, 95, 0.15);
+    --pink: #ff8fab;
+    --pink-bg: rgba(255, 143, 171, 0.1);
+    --mint: #7ecda0;
+    --mint-bg: rgba(126, 205, 160, 0.1);
+    --warn: #f0b060;
+    --warn-bg: rgba(240, 176, 96, 0.1);
+    --red: #e8636a;
+    --red-bg: rgba(232, 99, 106, 0.1);
+    --lavender: #b8a9e8;
+    --radius: 14px;
+    --mono: 'Space Mono', monospace;
+    --sans: 'Nunito', 'Noto Sans TC', sans-serif;
+    --cjk: 'Noto Sans TC', sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: radial-gradient(circle, rgba(244,132,95,0.07) 1px, transparent 1px);
+    background-size: 24px 24px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .app {
+    position: relative;
+    z-index: 1;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 28px 24px 60px;
+  }
+
+  .header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 28px;
+    padding-bottom: 18px;
+    border-bottom: 1.5px solid var(--border);
+    position: relative;
+  }
+  .header-left { display: flex; align-items: center; gap: 14px; flex: 1; }
+  .header-mascot {
+    width: 56px; height: 56px; flex-shrink: 0;
+  }
+  .header h1 { font-size: 24px; font-weight: 800; letter-spacing: -0.3px; color: var(--accent); display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .header-pill {
+    font-size: 11px; font-weight: 700; color: var(--text-dim);
+    background: var(--surface-3); border: 1.5px solid var(--border);
+    padding: 3px 12px; border-radius: 20px; letter-spacing: 0.3px;
+    white-space: nowrap;
+  }
+
+  .pixel-cat { image-rendering: pixelated; image-rendering: crisp-edges; }
+
+  /* Settings card */
+  .settings-card {
+    background: var(--surface); border: 2px solid var(--border); border-radius: var(--radius);
+    padding: 16px 18px; margin-bottom: 18px;
+    box-shadow: 4px 4px 0 rgba(244,132,95,0.08);
+  }
+  .settings-row {
+    display: grid; gap: 12px; align-items: end;
+  }
+  .settings-row.top { grid-template-columns: 1.5fr 0.8fr 0.8fr 1.2fr; margin-bottom: 12px; }
+  .settings-row.bottom { grid-template-columns: 1.5fr 1fr; }
+  @media (max-width: 768px) {
+    .settings-row.top { grid-template-columns: 1fr 1fr; }
+    .settings-row.bottom { grid-template-columns: 1fr; }
+  }
+  .setting-group { display: flex; flex-direction: column; gap: 4px; }
+  .setting-group label {
+    font-size: 10px; text-transform: uppercase; letter-spacing: 0.8px;
+    color: var(--text-dim); font-weight: 700;
+  }
+  .setting-group input, .setting-group select {
+    background: var(--surface-2); border: 1.5px solid var(--border); color: var(--text);
+    padding: 8px 11px; border-radius: 8px; font-family: var(--mono); font-size: 13px;
+    width: 100%; outline: none; transition: border 0.2s, box-shadow 0.2s;
+    -webkit-user-select: text; user-select: text;
+  }
+  .setting-group input:focus, .setting-group select:focus {
+    border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow);
+  }
+  .setting-group select { cursor: pointer; }
+
+  .checkbox-inline {
+    display: flex; align-items: center; gap: 8px; padding-top: 4px;
+  }
+  .checkbox-inline input[type="checkbox"] {
+    accent-color: var(--accent); width: 15px; height: 15px; cursor: pointer; flex-shrink: 0;
+  }
+  .checkbox-inline label {
+    font-size: 12px; color: var(--text-dim); cursor: pointer; font-weight: 600;
+  }
+
+  .workspace { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-bottom: 20px; }
+  @media (max-width: 768px) { .workspace { grid-template-columns: 1fr; } }
+
+  .panel {
+    background: var(--surface); border: 2px solid var(--border); border-radius: var(--radius);
+    overflow: hidden; display: flex; flex-direction: column; box-shadow: 4px 4px 0 rgba(244,132,95,0.08);
+    min-height: 400px; transition: border-color 0.3s, box-shadow 0.3s;
+  }
+  .panel:focus-within {
+    border-color: var(--accent);
+    box-shadow: 4px 4px 0 rgba(244,132,95,0.08), 0 0 0 3px rgba(244,132,95,0.1), 0 0 20px rgba(244,132,95,0.06);
+  }
+  .panel:hover:not(:focus-within) {
+    border-color: rgba(244,132,95,0.35);
+    box-shadow: 4px 4px 0 rgba(244,132,95,0.08), 0 0 12px rgba(244,132,95,0.04);
+  }
+  .panel-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 14px; border-bottom: 2px dashed var(--border); background: var(--surface-3);
+    flex-shrink: 0;
+  }
+  .panel-title { font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: var(--accent); font-weight: 800; display: flex; align-items: center; gap: 6px; }
+  .panel-badge { font-family: var(--mono); font-size: 11px; color: var(--text-dim); background: var(--surface-2); border: 1.5px solid var(--border); padding: 2px 8px; border-radius: 6px; }
+
+  textarea {
+    width: 100%; flex: 1; min-height: 0; background: transparent; border: none; color: var(--text);
+    font-family: var(--cjk); font-size: 15px; line-height: 1.9; padding: 14px; resize: none; outline: none;
+    -webkit-user-select: text; user-select: text;
+  }
+  textarea::placeholder { color: var(--text-muted); font-size: 14px; }
+
+  .preview-area {
+    padding: 14px; flex: 1; min-height: 0; overflow-y: auto;
+    font-family: var(--cjk); font-size: 14px; line-height: 1.6;
+    -webkit-user-select: text; user-select: text;
+  }
+  .preview-area::-webkit-scrollbar { width: 6px; }
+  .preview-area::-webkit-scrollbar-track { background: transparent; }
+  .preview-area::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  .sub-line { display: flex; align-items: flex-start; gap: 6px; padding: 5px 8px; border-radius: 8px; transition: background 0.15s; cursor: pointer; }
+  .sub-line:hover { background: var(--surface-3); }
+  .sub-line.active { background: var(--accent-glow); outline: 1.5px solid var(--accent); }
+  .sub-line.merged { background: rgba(126,205,160,0.08); outline: 1.5px dashed var(--mint); }
+  .sub-num { font-family: var(--mono); font-size: 11px; color: var(--text-muted); min-width: 26px; text-align: right; padding-top: 2px; flex-shrink: 0; }
+  .sub-text { flex: 1; font-family: var(--cjk); word-break: break-all; }
+  .sub-count { font-family: var(--mono); font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 6px; flex-shrink: 0; margin-top: 1px; border: 1.5px solid transparent; }
+  .sub-count.ok { color: var(--mint); background: var(--mint-bg); border-color: rgba(126,205,160,0.2); }
+  .sub-count.warn { color: var(--warn); background: var(--warn-bg); border-color: rgba(240,176,96,0.2); }
+  .sub-count.over { color: var(--red); background: var(--red-bg); border-color: rgba(232,99,106,0.2); }
+  /* Merge button - only visible on hover */
+  .sub-merge {
+    flex-shrink: 0; width: 22px; height: 22px; border: 1.5px solid transparent; background: none;
+    cursor: pointer; padding: 0; margin-top: 0px; opacity: 0; transition: opacity 0.15s, border-color 0.15s, background 0.15s;
+    display: flex; align-items: center; justify-content: center; font-size: 13px; border-radius: 5px;
+    color: var(--text-muted); font-weight: 700; font-family: var(--sans);
+  }
+  .sub-line:hover .sub-merge { opacity: 0.5; }
+  .sub-merge:hover { opacity: 1 !important; background: var(--surface-3); border-color: var(--border); }
+  .sub-merge.selected { opacity: 1; color: var(--accent); border-color: var(--accent); background: var(--accent-glow); }
+  .sub-merge.merged { opacity: 1; color: var(--mint); border-color: rgba(126,205,160,0.3); background: var(--mint-bg); }
+
+  .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 280px; color: var(--text-muted); gap: 10px; }
+  .empty-state p { font-size: 13px; font-weight: 600; }
+
+  .stats-bar {
+    display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 18px; padding: 10px 14px;
+    background: var(--surface); border: 2px solid var(--border); border-radius: 10px; box-shadow: 3px 3px 0 rgba(244,132,95,0.06);
+  }
+  .stat { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: var(--text-dim); }
+  .stat-val { font-family: var(--mono); font-weight: 700; color: var(--accent); font-size: 13px; }
+
+  .actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  button {
+    font-family: var(--sans); font-size: 13px; font-weight: 700; padding: 9px 18px; border-radius: 10px;
+    border: 2px solid var(--border); background: var(--surface); color: var(--text); cursor: pointer;
+    transition: all 0.15s; display: flex; align-items: center; gap: 6px; box-shadow: 3px 3px 0 rgba(0,0,0,0.04);
+  }
+  button:hover { border-color: var(--accent); transform: translate(-1px, -1px); box-shadow: 5px 5px 0 rgba(244,132,95,0.1); }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; box-shadow: 3px 3px 0 rgba(244,132,95,0.25); }
+  button.primary:hover { background: var(--accent-light); border-color: var(--accent-light); box-shadow: 5px 5px 0 rgba(244,132,95,0.3); }
+  button:active { transform: translate(1px, 1px); box-shadow: 1px 1px 0 rgba(0,0,0,0.04); }
+  button:disabled { opacity: 0.35; cursor: default; pointer-events: none; transform: none; box-shadow: 3px 3px 0 rgba(0,0,0,0.02); }
+  .actions-sep { width: 1px; height: 24px; background: var(--border); margin: 0 2px; flex-shrink: 0; }
+
+  .toast {
+    position: fixed; bottom: 24px; right: 24px; background: var(--surface); border: 2px solid var(--accent);
+    color: var(--text); padding: 10px 18px; border-radius: 10px; font-size: 13px; font-weight: 700;
+    z-index: 999; opacity: 0; transform: translateY(10px); transition: all 0.3s; pointer-events: none;
+    box-shadow: 4px 4px 0 var(--accent-glow);
+  }
+  .toast.show { opacity: 1; transform: translateY(0); }
+
+  /* ===== Ghibli-style grass footer (static) ===== */
+  .ground-scene {
+    position: fixed; bottom: 0; left: 0; right: 0; z-index: 9;
+    height: 80px; pointer-events: none; overflow: hidden;
+  }
+  .ground-scene svg { width: 100%; height: 100%; }
+
+  /* Cat on the grass */
+  .floating-cat {
+    position: fixed; bottom: 38px; left: 56px; z-index: 12; cursor: pointer;
+    transition: transform 0.3s; pointer-events: auto;
+  }
+  .floating-cat:hover { transform: scale(1.1); }
+
+  /* Fish on the ground - draggable */
+  .dead-fish {
+    position: fixed; bottom: 40px; z-index: 14;
+    cursor: grab; pointer-events: auto;
+    transition: opacity 0.3s;
+    touch-action: none;
+    user-select: none;
+  }
+  .dead-fish:active { cursor: grabbing; }
+  .dead-fish.dragging {
+    z-index: 20;
+    cursor: grabbing;
+    filter: drop-shadow(0 2px 6px rgba(0,0,0,0.2));
+    transition: none;
+  }
+  .dead-fish.grabbed {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+  }
+
+  /* Cat eating animation - longer, multiple chomps */
+  @keyframes catEat {
+    0% { transform: scale(1); }
+    8% { transform: scale(1.12) rotate(-4deg); }
+    16% { transform: scale(1.02) rotate(2deg); }
+    24% { transform: scale(1.12) rotate(-3deg); }
+    32% { transform: scale(1.02) rotate(2deg); }
+    40% { transform: scale(1.1) rotate(-2deg); }
+    48% { transform: scale(1.02) rotate(1deg); }
+    56% { transform: scale(1.08) rotate(-2deg); }
+    64% { transform: scale(1.02) rotate(1deg); }
+    72% { transform: scale(1.06) rotate(-1deg); }
+    80% { transform: scale(1.02); }
+    90% { transform: scale(1.04); }
+    100% { transform: scale(1); }
+  }
+  .floating-cat.eating { animation: catEat 2.5s ease; }
+
+  body { padding-bottom: 70px; }
+
+  /* Cat body parts for animation */
+  .cat-eyes { transition: opacity 0.08s; }
+  .cat-svg .cat-eyes { opacity: 1; }
+
+  /* Hover: blink loop */
+  @keyframes hoverBlink { 0%,40%,100% { opacity: 1; } 45%,55% { opacity: 0; } }
+  .floating-cat:hover .cat-eyes { animation: hoverBlink 0.8s ease infinite; }
+
+  /* Ear wiggle on hover */
+  @keyframes earWiggleL { 0%,100% { transform: translate(0,0); } 30% { transform: translate(0,-1px) rotate(-8deg); } 60% { transform: translate(0,0) rotate(4deg); } }
+  @keyframes earWiggleR { 0%,100% { transform: translate(0,0); } 30% { transform: translate(0,-1px) rotate(8deg); } 60% { transform: translate(0,0) rotate(-4deg); } }
+  .floating-cat:hover .cat-ear-l { animation: earWiggleL 0.6s ease infinite; transform-origin: 3px 2px; }
+  .floating-cat:hover .cat-ear-r { animation: earWiggleR 0.6s ease infinite; transform-origin: 13px 2px; }
+
+  /* Tail wag on hover */
+  @keyframes tailWag { 0%,100% { transform: rotate(0); } 25% { transform: rotate(12deg); } 75% { transform: rotate(-8deg); } }
+  .floating-cat:hover .cat-tail { animation: tailWag 0.5s ease infinite; transform-origin: 13px 9px; }
+
+  /* Speech bubble */
+  .cat-bubble {
+    position: absolute; top: -32px; left: 50%; transform: translateX(-50%) scale(0);
+    background: var(--surface); border: 2px solid var(--accent); border-radius: 10px;
+    padding: 3px 10px; font-size: 12px; font-weight: 700; color: var(--accent);
+    white-space: nowrap; pointer-events: none;
+    transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.2s;
+    opacity: 0; box-shadow: 2px 2px 0 var(--accent-glow);
+  }
+  .cat-bubble::after {
+    content: ''; position: absolute; bottom: -6px; left: 50%; transform: translateX(-50%);
+    width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent;
+    border-top: 6px solid var(--accent);
+  }
+  .floating-cat:hover .cat-bubble { transform: translateX(-50%) scale(1); opacity: 1; }
+  .floating-cat.clicked .cat-bubble { transform: translateX(-50%) scale(1.15); }
+
+  /* Header cat */
+  .header-mascot .cat-eyes { opacity: 1; }
+  .header-mascot:hover .cat-eyes { animation: hoverBlink 0.8s ease infinite; }
+
+  .footer-credit {
+    position: fixed; bottom: 28px; right: 0; z-index: 13;
+    font-size: 9px; font-weight: 600; letter-spacing: 0.3px;
+    color: rgba(255, 255, 255, 0.6); pointer-events: none;
+    font-family: var(--mono); padding: 8px 14px;
+  }
+
+  /* Export celebration overlay */
+  .export-overlay {
+    position: fixed; inset: 0; z-index: 100;
+    background: rgba(254,246,238,0.92);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 16px;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.3s;
+  }
+  .export-overlay.show { opacity: 1; pointer-events: auto; }
+  .export-overlay .big-cat { image-rendering: pixelated; image-rendering: crisp-edges; }
+  @keyframes catBounce {
+    0%,100% { transform: scale(1) rotate(0); }
+    20% { transform: scale(1.1) rotate(-3deg); }
+    40% { transform: scale(0.95) rotate(2deg); }
+    60% { transform: scale(1.08) rotate(-2deg); }
+    80% { transform: scale(0.98) rotate(1deg); }
+  }
+  .export-overlay.show .big-cat svg { animation: catBounce 1.5s ease; }
+  .export-overlay .cat-message {
+    font-family: var(--sans); font-size: 32px; font-weight: 800;
+    color: var(--accent); text-align: center; max-width: 500px;
+  }
+  .export-overlay .cat-sub {
+    font-family: var(--mono); font-size: 15px; color: var(--text-muted);
+    text-align: center; max-width: 460px;
+  }
+  @keyframes sparkle {
+    0%,100% { opacity: 0; transform: scale(0) rotate(0); }
+    50% { opacity: 1; transform: scale(1) rotate(180deg); }
+  }
+  .export-overlay .sparkle {
+    position: absolute; font-size: 28px; opacity: 0;
+    animation: sparkle 1.5s ease forwards;
+  }
+
+  .paw-deco { position: fixed; top: 14px; right: 20px; opacity: 0.08; z-index: 0; pointer-events: none; }
+</style>
+</head>
+<body>
+
+<svg class="paw-deco" width="120" height="60" viewBox="0 0 120 60">
+  <g fill="#f4845f">
+    <ellipse cx="15" cy="38" rx="7" ry="9"/><ellipse cx="5" cy="22" rx="4.5" ry="5.5"/>
+    <ellipse cx="17" cy="16" rx="4.5" ry="5.5"/><ellipse cx="29" cy="22" rx="4.5" ry="5.5"/>
+    <ellipse cx="75" cy="38" rx="7" ry="9" transform="rotate(-15 75 38)"/>
+    <ellipse cx="67" cy="22" rx="4.5" ry="5.5" transform="rotate(-15 67 22)"/>
+    <ellipse cx="79" cy="17" rx="4.5" ry="5.5" transform="rotate(-15 79 17)"/>
+    <ellipse cx="91" cy="24" rx="4.5" ry="5.5" transform="rotate(-15 91 24)"/>
+  </g>
+</svg>
+
+<div class="app">
+  <div class="header">
+    <div class="header-left">
+      <div class="header-mascot">
+        <svg class="pixel-cat" viewBox="0 0 16 16" width="56" height="56" xmlns="http://www.w3.org/2000/svg">
+          <rect x="2" y="0" width="2" height="2" fill="#f4845f"/><rect x="3" y="1" width="1" height="1" fill="#ffa07a"/>
+          <rect x="12" y="0" width="2" height="2" fill="#f4845f"/><rect x="12" y="1" width="1" height="1" fill="#ffa07a"/>
+          <rect x="2" y="2" width="12" height="3" fill="#f4845f"/><rect x="1" y="3" width="14" height="4" fill="#f4845f"/>
+          <rect x="5" y="4" width="6" height="3" fill="#ffc4a8"/>
+          <g class="cat-eyes">
+            <rect x="4" y="4" width="2" height="2" fill="#4a3728"/><rect x="4" y="4" width="1" height="1" fill="#ffffff"/>
+            <rect x="10" y="4" width="2" height="2" fill="#4a3728"/><rect x="10" y="4" width="1" height="1" fill="#ffffff"/>
+          </g>
+          <rect x="7" y="5" width="2" height="1" fill="#e8636a"/>
+          <rect x="6" y="6" width="1" height="1" fill="#d4917a"/><rect x="9" y="6" width="1" height="1" fill="#d4917a"/>
+          <rect x="3" y="7" width="10" height="4" fill="#f4845f"/><rect x="5" y="8" width="6" height="3" fill="#ffc4a8"/>
+          <rect x="4" y="3" width="1" height="1" fill="#d4714a"/><rect x="7" y="2" width="2" height="1" fill="#d4714a"/>
+          <rect x="11" y="3" width="1" height="1" fill="#d4714a"/><rect x="5" y="8" width="1" height="1" fill="#d4714a"/>
+          <rect x="10" y="8" width="1" height="1" fill="#d4714a"/>
+          <rect x="3" y="11" width="2" height="2" fill="#ffc4a8"/><rect x="11" y="11" width="2" height="2" fill="#ffc4a8"/>
+          <rect x="13" y="9" width="2" height="1" fill="#f4845f"/><rect x="14" y="8" width="2" height="1" fill="#f4845f"/>
+          <rect x="15" y="7" width="1" height="1" fill="#d4714a"/>
+        </svg>
+      </div>
+      <h1>SubCat <span class="header-pill">subtitle line formatter → .srt</span></h1>
+    </div>
+  </div>
+
+  <div class="settings-card">
+    <div class="settings-row top">
+      <div class="setting-group"><label>File name</label><input type="text" id="fileName" value="subtitles" placeholder="subtitles"></div>
+      <div class="setting-group"><label>Max chars</label><input type="number" id="maxChars" value="18" min="1" max="60"></div>
+      <div class="setting-group"><label>Gap (sec)</label><input type="number" id="gapSec" value="1" min="1" max="30" step="0.5"></div>
+      <div class="setting-group"><label>Start timecode</label><input type="text" id="startTC" value="00:00:01,000"></div>
+    </div>
+    <div class="settings-row bottom">
+      <div class="setting-group"><label>Punctuation</label>
+        <select id="punctMode">
+          <option value="strip">Strip all punctuation</option>
+          <option value="keep">Keep punctuation</option>
+          <option value="strip-cjk">Strip CJK punct only</option>
+        </select>
+      </div>
+      <div class="checkbox-inline" style="padding-bottom:2px;">
+        <input type="checkbox" id="smartBreak" checked>
+        <label for="smartBreak">Smart CJK line-breaking</label>
+      </div>
+    </div>
+  </div>
+
+  <div class="actions" style="margin-bottom:12px;">
+    <button id="undoBtn" onclick="undo()" disabled>↩ Undo</button>
+    <button id="redoBtn" onclick="redo()" disabled>↪ Redo</button>
+  </div>
+
+  <div class="workspace">
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">✏️ Script Input</span>
+        <span class="panel-badge" id="inputCount">0 chars</span>
+      </div>
+      <textarea id="scriptInput" placeholder="Paste your paragraph script here...&#10;粵語或普通話腳本都可以&#10;&#10;Each paragraph → subtitle lines ✨"></textarea>
+    </div>
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">👀 Preview</span>
+        <span class="panel-badge" id="lineCount">0 lines</span>
+      </div>
+      <div class="preview-area" id="preview">
+        <div class="empty-state">
+          <svg class="pixel-cat" viewBox="0 0 16 16" width="48" height="48" style="opacity:0.3"><rect x="2" y="0" width="2" height="2" fill="#c4a890"/><rect x="12" y="0" width="2" height="2" fill="#c4a890"/><rect x="2" y="2" width="12" height="3" fill="#c4a890"/><rect x="1" y="3" width="14" height="4" fill="#c4a890"/><rect x="5" y="4" width="6" height="3" fill="#d9c4b0"/><rect x="4" y="4" width="2" height="2" fill="#9a7e6b"/><rect x="10" y="4" width="2" height="2" fill="#9a7e6b"/><rect x="7" y="5" width="2" height="1" fill="#c4a890"/><rect x="3" y="7" width="10" height="4" fill="#c4a890"/><rect x="5" y="8" width="6" height="3" fill="#d9c4b0"/><rect x="3" y="11" width="2" height="2" fill="#d9c4b0"/><rect x="11" y="11" width="2" height="2" fill="#d9c4b0"/></svg>
+          <p>Paste script on the left to preview ~</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="stats-bar">
+    <div class="stat">🔢 Lines: <span class="stat-val" id="statLines">0</span></div>
+    <div class="stat">⚠️ Over limit: <span class="stat-val" id="statOver">0</span></div>
+    <div class="stat">📏 Avg length: <span class="stat-val" id="statAvg">0</span></div>
+    <div class="stat">⏱ Est. duration: <span class="stat-val" id="statDuration">00:00:00</span></div>
+  </div>
+
+  <div class="actions">
+    <button class="primary" onclick="exportSRT()">⬇ Export .SRT</button>
+    <button onclick="exportTXT()">📄 Export .TXT</button>
+    <button onclick="copyLines()">📋 Copy lines</button>
+    <button onclick="clearAll()">🗑 Clear</button>
+  </div>
+</div>
+
+<!-- ===== Ghibli-style grass meadow footer (static, thin) ===== -->
+<div class="ground-scene">
+  <svg viewBox="0 0 1600 80" preserveAspectRatio="xMidYMax slice" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="gFar" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#8ec86a"/><stop offset="100%" stop-color="#6aad4e"/>
+      </linearGradient>
+      <linearGradient id="gMid" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#7cc558"/><stop offset="100%" stop-color="#5a9e3e"/>
+      </linearGradient>
+      <linearGradient id="gNear" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#92d86e"/><stop offset="100%" stop-color="#6bb848"/>
+      </linearGradient>
+      <linearGradient id="gHi" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#b8e89a"/><stop offset="100%" stop-color="#8dd06a"/>
+      </linearGradient>
+    </defs>
+
+    <!-- Far grass hill -->
+    <path d="M-20,28 Q200,14 400,24 Q600,10 800,22 Q1000,12 1200,20 Q1400,10 1620,26 L1620,80 L-20,80Z" fill="url(#gFar)"/>
+    <!-- Mid grass field -->
+    <path d="M-20,38 Q100,26 250,34 Q420,22 600,32 Q780,22 960,32 Q1140,22 1320,30 Q1480,24 1620,36 L1620,80 L-20,80Z" fill="url(#gMid)"/>
+    <!-- Sunlit patch -->
+    <path d="M400,36 Q650,26 950,30 Q1150,24 1250,34 L1250,80 L400,80Z" fill="url(#gHi)" opacity="0.4"/>
+    <!-- Near grass field -->
+    <path d="M-20,48 Q80,36 200,43 Q360,32 520,42 Q680,34 840,44 Q1000,34 1160,42 Q1320,34 1480,42 Q1560,36 1620,46 L1620,80 L-20,80Z" fill="url(#gNear)"/>
+    <!-- Foreground grass -->
+    <path d="M-20,56 Q60,46 160,52 Q280,44 400,52 Q520,44 640,52 Q760,44 880,52 Q1000,44 1120,50 Q1240,44 1360,52 Q1480,46 1620,54 L1620,80 L-20,80Z" fill="#5aa03a"/>
+    <!-- Foreground highlight -->
+    <path d="M-20,57 Q60,47 160,53 Q280,45 400,53 Q520,45 640,53 Q760,45 880,53 Q1000,45 1120,51 Q1240,45 1360,53 Q1480,47 1620,55 L1620,60 Q1480,50 1360,56 Q1240,48 1120,54 Q1000,48 880,56 Q760,48 640,56 Q520,48 400,56 Q280,48 160,56 Q60,50 -20,60Z" fill="#7cc558" opacity="0.45"/>
+    <!-- Dirt -->
+    <rect x="0" y="64" width="1600" height="16" fill="#c4a060"/>
+    <rect x="0" y="66" width="1600" height="14" fill="#b8945a"/>
+    <!-- Grass tufts over dirt -->
+    <g fill="#5aa03a">
+      <ellipse cx="50" cy="64" rx="22" ry="4"/><ellipse cx="150" cy="64" rx="18" ry="3.5"/>
+      <ellipse cx="270" cy="64" rx="24" ry="4"/><ellipse cx="400" cy="64" rx="20" ry="3.5"/>
+      <ellipse cx="530" cy="64" rx="22" ry="4"/><ellipse cx="660" cy="64" rx="18" ry="3.5"/>
+      <ellipse cx="790" cy="64" rx="24" ry="4"/><ellipse cx="920" cy="64" rx="20" ry="3.5"/>
+      <ellipse cx="1050" cy="64" rx="22" ry="4"/><ellipse cx="1180" cy="64" rx="18" ry="3.5"/>
+      <ellipse cx="1310" cy="64" rx="24" ry="4"/><ellipse cx="1440" cy="64" rx="20" ry="3.5"/>
+      <ellipse cx="1560" cy="64" rx="22" ry="4"/>
+    </g>
+    <!-- Grass blades (static) -->
+    <g>
+      <path d="M55,55 Q52,35 48,22 Q50,35 55,55" stroke="#5a9e3e" stroke-width="2" fill="#6ab84a" opacity="0.75"/>
+      <path d="M65,56 Q68,38 72,24 Q70,38 65,56" stroke="#4a8e2e" stroke-width="1.5" fill="#5aa83a" opacity="0.65"/>
+      <path d="M280,52 Q276,32 270,18 Q278,34 280,52" stroke="#5a9e3e" stroke-width="2" fill="#6ab84a" opacity="0.75"/>
+      <path d="M295,54 Q299,36 305,22 Q298,38 295,54" stroke="#4a8e2e" stroke-width="1.5" fill="#5aa83a" opacity="0.65"/>
+      <path d="M550,50 Q546,28 540,14 Q548,30 550,50" stroke="#5a9e3e" stroke-width="2.2" fill="#6ab84a" opacity="0.8"/>
+      <path d="M565,52 Q570,34 576,20 Q568,36 565,52" stroke="#6ab84a" stroke-width="1.5" fill="#7cc558" opacity="0.65"/>
+      <path d="M850,50 Q845,28 838,12 Q847,30 850,50" stroke="#5a9e3e" stroke-width="2.2" fill="#6ab84a" opacity="0.8"/>
+      <path d="M868,54 Q873,36 880,22 Q872,38 868,54" stroke="#7cc558" stroke-width="1.5" fill="#8dd06a" opacity="0.65"/>
+      <path d="M1100,52 Q1095,30 1088,16 Q1097,32 1100,52" stroke="#5a9e3e" stroke-width="2" fill="#6ab84a" opacity="0.75"/>
+      <path d="M1350,50 Q1344,32 1338,18 Q1346,34 1350,50" stroke="#6ab84a" stroke-width="2" fill="#7cc558" opacity="0.75"/>
+      <path d="M1500,52 Q1496,34 1490,20 Q1498,36 1500,52" stroke="#5a9e3e" stroke-width="1.8" fill="#6ab84a" opacity="0.7"/>
+    </g>
+    <!-- Wildflowers (static) -->
+    <!-- White daisies -->
+    <g>
+      <line x1="180" y1="52" x2="178" y2="34" stroke="#5a9e3e" stroke-width="1.3" stroke-linecap="round"/>
+      <circle cx="178" cy="33" r="3.5" fill="#fff"/><circle cx="178" cy="33" r="1.5" fill="#ffd666"/>
+      <circle cx="175" cy="31.5" r="1.8" fill="#f4f0ea"/><circle cx="181" cy="31.5" r="1.8" fill="#f4f0ea"/>
+      <circle cx="175" cy="34.5" r="1.8" fill="#f4f0ea"/><circle cx="181" cy="34.5" r="1.8" fill="#f4f0ea"/>
+    </g>
+    <g>
+      <line x1="720" y1="50" x2="718" y2="30" stroke="#4a8e2e" stroke-width="1.3" stroke-linecap="round"/>
+      <circle cx="718" cy="29" r="3" fill="#fff"/><circle cx="718" cy="29" r="1.3" fill="#ffd666"/>
+      <circle cx="715.5" cy="27.5" r="1.6" fill="#f4f0ea"/><circle cx="720.5" cy="27.5" r="1.6" fill="#f4f0ea"/>
+      <circle cx="715.5" cy="30.5" r="1.6" fill="#f4f0ea"/><circle cx="720.5" cy="30.5" r="1.6" fill="#f4f0ea"/>
+    </g>
+    <g>
+      <line x1="1250" y1="50" x2="1248" y2="32" stroke="#5a9e3e" stroke-width="1.3" stroke-linecap="round"/>
+      <circle cx="1248" cy="31" r="3" fill="#fff"/><circle cx="1248" cy="31" r="1.3" fill="#ffd666"/>
+      <circle cx="1245.5" cy="29.5" r="1.6" fill="#f4f0ea"/><circle cx="1250.5" cy="29.5" r="1.6" fill="#f4f0ea"/>
+      <circle cx="1245.5" cy="32.5" r="1.6" fill="#f4f0ea"/><circle cx="1250.5" cy="32.5" r="1.6" fill="#f4f0ea"/>
+    </g>
+    <!-- Pink flowers -->
+    <g>
+      <line x1="420" y1="52" x2="418" y2="32" stroke="#5a9e3e" stroke-width="1.3" stroke-linecap="round"/>
+      <circle cx="418" cy="30" r="4" fill="#ff8fab"/><circle cx="418" cy="30" r="1.8" fill="#ffe0a0"/>
+      <circle cx="415" cy="28" r="2" fill="#ffa5c0"/><circle cx="421" cy="28" r="2" fill="#ffa5c0"/>
+      <circle cx="415" cy="32" r="2" fill="#ffa5c0"/><circle cx="421" cy="32" r="2" fill="#ffa5c0"/>
+    </g>
+    <g>
+      <line x1="980" y1="50" x2="978" y2="32" stroke="#4a8e2e" stroke-width="1.3" stroke-linecap="round"/>
+      <circle cx="978" cy="31" r="3.5" fill="#ffaabb"/><circle cx="978" cy="31" r="1.5" fill="#ffe0a0"/>
+      <circle cx="975.5" cy="29" r="1.8" fill="#ffc0d0"/><circle cx="980.5" cy="29" r="1.8" fill="#ffc0d0"/>
+      <circle cx="975.5" cy="33" r="1.8" fill="#ffc0d0"/><circle cx="980.5" cy="33" r="1.8" fill="#ffc0d0"/>
+    </g>
+    <!-- Blue forget-me-nots -->
+    <g>
+      <line x1="500" y1="54" x2="498" y2="40" stroke="#5a9e3e" stroke-width="1" stroke-linecap="round"/>
+      <circle cx="498" cy="39" r="2.5" fill="#88bbee"/><circle cx="498" cy="39" r="1" fill="#ffd666"/>
+    </g>
+    <g>
+      <line x1="1420" y1="52" x2="1418" y2="38" stroke="#4a8e2e" stroke-width="1" stroke-linecap="round"/>
+      <circle cx="1418" cy="37" r="2.5" fill="#88bbee"/><circle cx="1418" cy="37" r="1" fill="#ffd666"/>
+    </g>
+    <!-- Tiny yellow dots -->
+    <circle cx="240" cy="56" r="1.5" fill="#ffd666" opacity="0.8"/>
+    <circle cx="380" cy="58" r="1.3" fill="#ffe088" opacity="0.7"/>
+    <circle cx="650" cy="54" r="1.6" fill="#ffd666" opacity="0.8"/>
+    <circle cx="900" cy="56" r="1.3" fill="#ffe088" opacity="0.7"/>
+    <circle cx="1180" cy="54" r="1.5" fill="#ffd666" opacity="0.8"/>
+    <!-- Lavender -->
+    <g>
+      <line x1="770" y1="52" x2="768" y2="30" stroke="#5a9e3e" stroke-width="1.1" stroke-linecap="round"/>
+      <circle cx="768" cy="30" r="2" fill="#b8a9e8"/><circle cx="768" cy="34" r="2.2" fill="#c4b8ee"/><circle cx="768" cy="38" r="1.8" fill="#d4cbf4"/>
+    </g>
+  </svg>
+</div>
+
+<div class="footer-credit">SubCat v1.2 · 2026</div>
+
+<!-- Cat standing on the grass -->
+<div class="floating-cat" id="floatingCat" onclick="meow()">
+  <div class="cat-bubble" id="catBubble">Hi~!</div>
+  <svg class="pixel-cat cat-svg" viewBox="0 0 16 14" width="56" height="49">
+    <g class="cat-ear-l"><rect x="2" y="0" width="2" height="2" fill="#f4845f"/><rect x="3" y="1" width="1" height="1" fill="#ffa07a"/></g>
+    <g class="cat-ear-r"><rect x="12" y="0" width="2" height="2" fill="#f4845f"/><rect x="12" y="1" width="1" height="1" fill="#ffa07a"/></g>
+    <rect x="2" y="2" width="12" height="3" fill="#f4845f"/><rect x="1" y="3" width="14" height="4" fill="#f4845f"/>
+    <rect x="5" y="4" width="6" height="3" fill="#ffc4a8"/>
+    <g class="cat-eyes"><rect x="4" y="4" width="2" height="2" fill="#4a3728"/><rect x="4" y="4" width="1" height="1" fill="#fff"/><rect x="10" y="4" width="2" height="2" fill="#4a3728"/><rect x="10" y="4" width="1" height="1" fill="#fff"/></g>
+    <rect x="7" y="5" width="2" height="1" fill="#e8636a"/>
+    <rect x="6" y="6" width="1" height="1" fill="#d4917a"/><rect x="9" y="6" width="1" height="1" fill="#d4917a"/>
+    <rect x="3" y="7" width="10" height="4" fill="#f4845f"/><rect x="5" y="8" width="6" height="3" fill="#ffc4a8"/>
+    <rect x="3" y="11" width="3" height="2" fill="#ffc4a8"/><rect x="10" y="11" width="3" height="2" fill="#ffc4a8"/>
+    <g class="cat-tail"><rect x="13" y="9" width="2" height="1" fill="#f4845f"/><rect x="14" y="8" width="2" height="1" fill="#f4845f"/><rect x="15" y="7" width="1" height="1" fill="#d4714a"/></g>
+  </svg>
+</div>
+
+<!-- Dead fish on the grass -->
+<div class="dead-fish" id="deadFish">
+  <svg class="pixel-cat" viewBox="0 0 22 12" width="36" height="20">
+    <!-- Spine -->
+    <line x1="7" y1="6" x2="18" y2="6" stroke="#c4a890" stroke-width="1.3" stroke-linecap="round"/>
+    <!-- Head (side profile, egg shape) -->
+    <ellipse cx="5" cy="5.5" rx="4.8" ry="4.2" fill="#d9c4b0"/>
+    <ellipse cx="4.6" cy="5.5" rx="4" ry="3.6" fill="#e8ddd0"/>
+    <!-- Snout bump -->
+    <ellipse cx="1.8" cy="6.2" rx="2" ry="2.2" fill="#e8ddd0"/>
+    <!-- Blush cheek -->
+    <circle cx="4" cy="7.5" r="1.3" fill="#f0c4b0" opacity="0.45"/>
+    <!-- Single X eye (side view) -->
+    <line x1="4.8" y1="3.8" x2="6.4" y2="5.4" stroke="#4a3728" stroke-width="0.65" stroke-linecap="round"/>
+    <line x1="6.4" y1="3.8" x2="4.8" y2="5.4" stroke="#4a3728" stroke-width="0.65" stroke-linecap="round"/>
+    <!-- Side mouth (neutral line) -->
+    <line x1="1.5" y1="7.2" x2="3" y2="7.2" stroke="#b89a80" stroke-width="0.5" stroke-linecap="round"/>
+    <!-- Ribs -->
+    <line x1="9.5" y1="6" x2="8.5" y2="2.8" stroke="#c4a890" stroke-width="0.9" stroke-linecap="round"/>
+    <line x1="9.5" y1="6" x2="8.5" y2="9.2" stroke="#c4a890" stroke-width="0.9" stroke-linecap="round"/>
+    <line x1="12" y1="6" x2="11" y2="2.5" stroke="#c4a890" stroke-width="0.9" stroke-linecap="round"/>
+    <line x1="12" y1="6" x2="11" y2="9.5" stroke="#c4a890" stroke-width="0.9" stroke-linecap="round"/>
+    <line x1="14.3" y1="6" x2="13.3" y2="3" stroke="#c4a890" stroke-width="0.8" stroke-linecap="round"/>
+    <line x1="14.3" y1="6" x2="13.3" y2="9" stroke="#c4a890" stroke-width="0.8" stroke-linecap="round"/>
+    <line x1="16.3" y1="6" x2="15.5" y2="3.5" stroke="#c4a890" stroke-width="0.7" stroke-linecap="round"/>
+    <line x1="16.3" y1="6" x2="15.5" y2="8.5" stroke="#c4a890" stroke-width="0.7" stroke-linecap="round"/>
+    <!-- Tail fork -->
+    <line x1="18" y1="6" x2="21" y2="2.5" stroke="#c4a890" stroke-width="1" stroke-linecap="round"/>
+    <line x1="18" y1="6" x2="21" y2="9.5" stroke="#c4a890" stroke-width="1" stroke-linecap="round"/>
+  </svg>
+</div>
+
+<div class="export-overlay" id="exportOverlay">
+  <div class="big-cat" id="bigCatContainer"></div>
+  <div class="cat-message" id="exportMsg"></div>
+  <div class="cat-sub" id="exportSub"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// === PUNCTUATION PATTERNS ===
+// Only strip sentence punctuation (commas, periods, exclamation, question, semicolon, colon, ellipsis)
+// NOTE: 、(enumeration comma) is kept — it's used within sentences, not as a break
+// NOTE: . is handled separately to preserve decimal points like 1.8
+const CJK_STRIP = /[\uFF0C\u3002\uFF01\uFF1F\uFF1B\uFF1A\u2026]/g;
+const ALL_STRIP_BASE = /[\uFF0C\u3002\uFF01\uFF1F\uFF1B\uFF1A\u2026,!?;:]/g;
+
+// Punctuation that triggers line breaks (split AFTER these)
+// No 、(enumeration), no . (could be decimal)
+const BREAK_AFTER = new Set(['\uFF0C','\u3002','\uFF01','\uFF1F','\uFF1B','\uFF1A','\u2026',',',';',':','!','?']);
+
+function isDecimalDot(text, idx) {
+  // A dot is decimal if surrounded by digits: "1.8"
+  if (text[idx] !== '.') return false;
+  const before = idx > 0 && /[0-9]/.test(text[idx - 1]);
+  const after = idx + 1 < text.length && /[0-9]/.test(text[idx + 1]);
+  return before && after;
+}
+
+function stripPunct(text, mode) {
+  if (mode === 'keep') return text;
+  if (mode === 'strip-cjk') return text.replace(CJK_STRIP, '');
+  // Strip ALL mode: use base pattern, then handle . separately (only strip non-decimal dots)
+  let result = text.replace(ALL_STRIP_BASE, '');
+  // Now strip standalone dots (not decimal)
+  let out = '';
+  for (let i = 0; i < result.length; i++) {
+    if (result[i] === '.' && !isDecimalDot(result, i)) continue;
+    out += result[i];
+  }
+  return out;
+}
+
+// === WIDTH CALCULATION ===
+function isCJK(ch) {
+  const c = ch.charCodeAt(0);
+  return (c >= 0x4E00 && c <= 0x9FFF) || (c >= 0x3400 && c <= 0x4DBF) ||
+         (c >= 0xF900 && c <= 0xFAFF) || (c >= 0x2E80 && c <= 0x2EFF) ||
+         (c >= 0x3000 && c <= 0x303F) || (c >= 0xFF00 && c <= 0xFFEF) ||
+         (c >= 0x300C && c <= 0x300F) || (c >= 0x300A && c <= 0x300B) ||
+         (c >= 0x3010 && c <= 0x3011);
+}
+
+function charWidth(ch) {
+  return isCJK(ch) ? 1 : 0.5;
+}
+
+function textWidth(str) {
+  let w = 0;
+  for (let i = 0; i < str.length; i++) w += charWidth(str[i]);
+  return w;
+}
+
+// Width up to index (exclusive)
+function widthUpTo(str, idx) {
+  let w = 0;
+  for (let i = 0; i < idx; i++) w += charWidth(str[i]);
+  return w;
+}
+
+// Find char index where cumulative width reaches target
+function indexAtWidth(str, targetW) {
+  let w = 0;
+  for (let i = 0; i < str.length; i++) {
+    w += charWidth(str[i]);
+    if (w > targetW) return i;
+  }
+  return str.length;
+}
+
+// === ENGLISH BLOCK DETECTION ===
+function isLatin(ch) {
+  const c = ch.charCodeAt(0);
+  return (c >= 0x41 && c <= 0x5A) || (c >= 0x61 && c <= 0x7A) || (c >= 0x30 && c <= 0x39);
+}
+
+// Find English blocks: consecutive latin chars + spaces between them
+function findEnglishBlocks(text) {
+  const blocks = []; // [{start, end}]
+  let i = 0;
+  while (i < text.length) {
+    if (isLatin(text[i])) {
+      const start = i;
+      while (i < text.length && (isLatin(text[i]) || (text[i] === ' ' && i + 1 < text.length && isLatin(text[i + 1])))) i++;
+      blocks.push({ start, end: i });
+    } else {
+      i++;
+    }
+  }
+  return blocks;
+}
+
+function isInsideEnglishBlock(idx, blocks) {
+  for (const b of blocks) {
+    if (idx > b.start && idx < b.end) return true;
+  }
+  return false;
+}
+
+// === BRACKET PROTECTION ===
+function findProtectedRanges(text) {
+  const PAIRS = [['(', ')'], ['\uFF08', '\uFF09'], ['\u300C', '\u300D'], ['\u300A', '\u300B']];
+  const ranges = [];
+  for (const [open, close] of PAIRS) {
+    let i = 0;
+    while (i < text.length) {
+      const s = text.indexOf(open, i);
+      if (s === -1) break;
+      const e = text.indexOf(close, s + 1);
+      if (e === -1) break;
+      ranges.push([s, e]);
+      i = e + 1;
+    }
+  }
+  return ranges;
+}
+
+function isProtectedIdx(idx, ranges) {
+  for (const [s, e] of ranges) {
+    if (idx > s && idx <= e) return true;
+  }
+  return false;
+}
+
+// === SPLIT AT PUNCTUATION ===
+function splitAtPunct(text) {
+  const segments = [];
+  let buf = '';
+  for (let i = 0; i < text.length; i++) {
+    buf += text[i];
+    if (BREAK_AFTER.has(text[i])) {
+      segments.push(buf);
+      buf = '';
+    }
+  }
+  if (buf) segments.push(buf);
+  return segments;
+}
+
+// === SMART SPLIT WITH WIDTH, ENGLISH PROTECTION, BALANCING ===
+function smartSplitLine(text, maxW) {
+  const tw = textWidth(text);
+  if (tw <= maxW) return [text];
+
+  const engBlocks = findEnglishBlocks(text);
+  const protRanges = findProtectedRanges(text);
+
+  // Smart balance: if slightly over (up to 1.25x), split into two balanced halves
+  if (tw <= maxW * 1.25) {
+    const halfW = tw / 2;
+    const midIdx = indexAtWidth(text, halfW);
+    // Search around midIdx for a safe split point
+    let bestSplit = midIdx;
+    const searchRange = Math.max(3, Math.floor(text.length * 0.2));
+    let bestDiff = Infinity;
+    for (let i = Math.max(1, midIdx - searchRange); i <= Math.min(text.length - 1, midIdx + searchRange); i++) {
+      if (isInsideEnglishBlock(i, engBlocks)) continue;
+      if (isProtectedIdx(i, protRanges)) continue;
+      const leftW = widthUpTo(text, i);
+      const diff = Math.abs(leftW - halfW);
+      if (diff < bestDiff) { bestDiff = diff; bestSplit = i; }
+    }
+    const l1 = text.slice(0, bestSplit).trim();
+    const l2 = text.slice(bestSplit).trim();
+    return [l1, l2].filter(l => l);
+  }
+
+  // Normal split for longer text
+  const lines = [];
+  let rem = text;
+  let offset = 0;
+
+  while (textWidth(rem) > maxW) {
+    const cutIdx = indexAtWidth(rem, maxW);
+    let sp = cutIdx;
+    const minIdx = Math.max(1, Math.floor(cutIdx * 0.4));
+    let found = false;
+
+    // Look backwards for safe split: not inside English block or protected range
+    for (let i = cutIdx - 1; i >= minIdx; i--) {
+      if (isInsideEnglishBlock(offset + i, engBlocks)) continue;
+      if (isProtectedIdx(offset + i, protRanges)) continue;
+      // Prefer spaces
+      if (rem[i] === ' ') { sp = i + 1; found = true; break; }
+    }
+    // If no space, find any safe position
+    if (!found) {
+      for (let i = cutIdx - 1; i >= minIdx; i--) {
+        if (!isInsideEnglishBlock(offset + i, engBlocks) && !isProtectedIdx(offset + i, protRanges)) {
+          sp = i; found = true; break;
+        }
+      }
+    }
+    // If still not found (long English block or bracket), look forward
+    if (!found) {
+      for (let i = cutIdx; i < rem.length; i++) {
+        if (!isInsideEnglishBlock(offset + i, engBlocks) && !isProtectedIdx(offset + i, protRanges)) {
+          sp = i; break;
+        }
+      }
+    }
+
+    lines.push(rem.slice(0, sp).trim());
+    rem = rem.slice(sp);
+    offset += sp;
+  }
+  if (rem.trim()) lines.push(rem.trim());
+  return lines;
+}
+
+// === ENPS STRIPPING ===
+function stripENPS(text) {
+  return text
+    .replace(/\{[^}]*\}/g, '')
+    .replace(/<[^>]*>/g, '')
+    .replace(/\[[^\]]*\]/g, '')
+    .replace(/\(\([^)]*\)\)/g, '')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+}
+
+function processScript() {
+  const raw = document.getElementById('scriptInput').value;
+  const maxW = parseInt(document.getElementById('maxChars').value) || 18;
+  const punctMode = document.getElementById('punctMode').value;
+  const smart = document.getElementById('smartBreak').checked;
+  document.getElementById('inputCount').textContent = raw.length + ' chars';
+  mergeSelection = -1;
+
+  // Detect if input is a continuation/edit (keep merges) vs completely replaced (reset)
+  // Only reset merges when content is 90%+ different (essentially a fresh paste)
+  const keepMerges = (function() {
+    if (!prevInput) return false;
+    if (!raw.trim()) return false;
+    // Check how much of prevInput survives in raw using overlapping chunks
+    const longer = prevInput.length > raw.length ? prevInput : raw;
+    const shorter = prevInput.length > raw.length ? raw : prevInput;
+    const chunkSize = Math.max(4, Math.floor(longer.length * 0.1));
+    let matched = 0;
+    const totalChunks = Math.floor(longer.length / chunkSize);
+    for (let i = 0; i + chunkSize <= longer.length; i += chunkSize) {
+      if (shorter.includes(longer.slice(i, i + chunkSize))) matched++;
+    }
+    const overlapRatio = totalChunks > 0 ? matched / totalChunks : 0;
+    return overlapRatio > 0.1; // keep if more than 10% overlaps (reset only when 90%+ different)
+  })();
+  if (!keepMerges) {
+    mergeRules = [];
+    mergeExceptions = [];
+  }
+  prevInput = raw;
+
+  if (!raw.trim()) {
+    document.getElementById('preview').innerHTML = '<div class="empty-state"><svg class="pixel-cat" viewBox="0 0 16 16" width="48" height="48" style="opacity:0.3"><rect x="2" y="0" width="2" height="2" fill="#c4a890"/><rect x="12" y="0" width="2" height="2" fill="#c4a890"/><rect x="2" y="2" width="12" height="3" fill="#c4a890"/><rect x="1" y="3" width="14" height="4" fill="#c4a890"/><rect x="5" y="4" width="6" height="3" fill="#d9c4b0"/><rect x="4" y="4" width="2" height="2" fill="#9a7e6b"/><rect x="10" y="4" width="2" height="2" fill="#9a7e6b"/><rect x="7" y="5" width="2" height="1" fill="#c4a890"/><rect x="3" y="7" width="10" height="4" fill="#c4a890"/><rect x="5" y="8" width="6" height="3" fill="#d9c4b0"/><rect x="3" y="11" width="2" height="2" fill="#d9c4b0"/><rect x="11" y="11" width="2" height="2" fill="#d9c4b0"/></svg><p>Paste script on the left to preview ~</p></div>';
+    updateStats([]);
+    return [];
+  }
+
+  const paras = raw.split(/\n+/).filter(p => p.trim());
+  let allLines = [];
+
+  for (const p of paras) {
+    const stripped = stripENPS(p.trim());
+    if (!stripped) continue;
+
+    if (smart) {
+      const punctSegments = splitAtPunct(stripped);
+      for (const seg of punctSegments) {
+        const cleaned = stripPunct(seg, punctMode).replace(/\s+/g, ' ').trim();
+        if (!cleaned) continue;
+        if (textWidth(cleaned) <= maxW) {
+          allLines.push(cleaned);
+        } else {
+          allLines.push(...smartSplitLine(cleaned, maxW));
+        }
+      }
+    } else {
+      const cleaned = stripPunct(stripped, punctMode).replace(/\s+/g, ' ').trim();
+      if (!cleaned) continue;
+      if (textWidth(cleaned) <= maxW) {
+        allLines.push(cleaned);
+      } else {
+        allLines.push(...smartSplitLine(cleaned, maxW));
+      }
+    }
+  }
+
+  // Apply global merge rules (with local exceptions)
+  mergedLineIndices = new Set();
+  allLines = applyMergeRules(allLines);
+
+  renderPreview(allLines, maxW);
+  updateStats(allLines);
+  return allLines;
+}
+
+// === MERGE SYSTEM ===
+let mergeRules = [];
+let mergeExceptions = [];
+let prevInput = '';
+let displayedLines = [];
+let mergeSelection = -1;
+let mergedLineIndices = new Set();
+
+function ruleKey(a, b) { return a + '\u0000' + b; }
+
+// Map from displayed line index to the raw line index where the merge happened
+let displayToRawMap = []; // displayToRawMap[displayIdx] = rawIdx (for merged lines) or -1
+
+function applyMergeRules(lines) {
+  if (!mergeRules.length) {
+    displayToRawMap = lines.map(() => -1);
+    return lines;
+  }
+  const result = [];
+  displayToRawMap = [];
+  let i = 0;
+
+  while (i < lines.length) {
+    let wasMerged = false;
+    if (i + 1 < lines.length) {
+      for (const rule of mergeRules) {
+        if (lines[i] === rule.a && lines[i + 1] === rule.b) {
+          const isExcepted = mergeExceptions.some(ex => ex.a === rule.a && ex.b === rule.b && ex.rawIdx === i);
+          if (!isExcepted) {
+            result.push(lines[i] + lines[i + 1]);
+            mergedLineIndices.add(result.length - 1);
+            displayToRawMap.push(i); // this displayed line came from raw index i
+            i += 2;
+            wasMerged = true;
+            break;
+          }
+        }
+      }
+    }
+    if (!wasMerged) {
+      result.push(lines[i]);
+      displayToRawMap.push(-1); // not a merged line
+      i++;
+    }
+  }
+  return result;
+}
+
+// Store the raw (pre-merge) lines so we can map back for unmerge
+let rawSplitLines = [];
+
+function renderPreview(lines, maxW) {
+  displayedLines = lines.slice();
+  const el = document.getElementById('preview');
+  if (!lines.length) { el.innerHTML = '<div class="empty-state"><p>No subtitle lines generated</p></div>'; return; }
+
+  el.innerHTML = lines.map((l, i) => {
+    const w = textWidth(l);
+    const wDisplay = Math.ceil(w * 10) / 10;
+    const cls = w > maxW ? 'over' : w > maxW - 1 ? 'warn' : 'ok';
+    const isSelected = mergeSelection === i;
+    const isMerged = mergedLineIndices.has(i);
+
+    const btnIcon = isMerged ? '\u2212' : '+';
+    const btnCls = 'sub-merge' + (isSelected ? ' selected' : '') + (isMerged ? ' merged' : '');
+    const btnTitle = isMerged ? 'Unmerge this line' : 'Select to merge with adjacent line';
+
+    return '<div class="sub-line' + (isMerged ? ' merged' : '') + '" data-idx="' + i + '">'
+      + '<span class="sub-num">' + (i+1) + '</span>'
+      + '<span class="sub-text">' + esc(l) + '</span>'
+      + '<button class="' + btnCls + '" data-merge="' + i + '" title="' + btnTitle + '">' + btnIcon + '</button>'
+      + '<span class="sub-count ' + cls + '">' + wDisplay + '</span>'
+      + '</div>';
+  }).join('');
+
+  document.getElementById('lineCount').textContent = lines.length + ' lines';
+
+  // Merge button click
+  el.querySelectorAll('.sub-merge').forEach(btn => {
+    btn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      const idx = parseInt(this.dataset.merge);
+      if (mergedLineIndices.has(idx)) {
+        handleUnmerge(idx);
+      } else {
+        handleMergeClick(idx);
+      }
+    });
+  });
+
+  // Single click line → navigate to source
+  el.querySelectorAll('.sub-line').forEach(row => {
+    row.addEventListener('click', function(e) {
+      if (e.target.closest('.sub-merge')) return;
+      const idx = parseInt(this.dataset.idx);
+      navigateToSource(idx);
+      el.querySelectorAll('.sub-line').forEach(r => r.classList.remove('active'));
+      this.classList.add('active');
+    });
+  });
+}
+
+function handleMergeClick(idx) {
+  if (mergeSelection === -1) {
+    mergeSelection = idx;
+    document.querySelectorAll('.sub-merge').forEach(b => b.classList.remove('selected'));
+    const btn = document.querySelector('.sub-merge[data-merge="' + idx + '"]');
+    if (btn) btn.classList.add('selected');
+  } else if (mergeSelection === idx) {
+    mergeSelection = -1;
+    document.querySelectorAll('.sub-merge').forEach(b => b.classList.remove('selected'));
+  } else {
+    const a = Math.min(mergeSelection, idx);
+    const b = Math.max(mergeSelection, idx);
+    if (b - a === 1) {
+      const lineA = displayedLines[a];
+      const lineB = displayedLines[b];
+
+      // Check if this pair matches an existing rule that has a local exception here
+      // If so, just remove the exception (re-merge this instance only)
+      let wasRemerge = false;
+      for (const rule of mergeRules) {
+        if (rule.a === lineA && rule.b === lineB) {
+          // Find and remove the exception for this raw position
+          // We need to figure out the raw index for displayedLines[a]
+          // Since these are unmerged lines, they map 1:1 to raw positions
+          // Walk displayToRawMap won't help since these aren't merged — need to reconstruct
+          const rawLines = getRawSplitLines();
+          // Find which raw index this displayed pair corresponds to
+          // Count through raw lines, skipping merged ones, to find position of displayed line a
+          let rawI = 0, dispI = 0;
+          while (dispI < a && rawI < rawLines.length) {
+            // Check if rawI is a merged pair (not excepted)
+            let isMergedPair = false;
+            if (rawI + 1 < rawLines.length) {
+              for (const r of mergeRules) {
+                if (rawLines[rawI] === r.a && rawLines[rawI + 1] === r.b) {
+                  const isExc = mergeExceptions.some(ex => ex.a === r.a && ex.b === r.b && ex.rawIdx === rawI);
+                  if (!isExc) { isMergedPair = true; break; }
+                }
+              }
+            }
+            if (isMergedPair) { rawI += 2; } else { rawI++; }
+            dispI++;
+          }
+
+          // rawI now points to the raw index of displayed line a
+          const exIdx = mergeExceptions.findIndex(ex => ex.a === rule.a && ex.b === rule.b && ex.rawIdx === rawI);
+          if (exIdx !== -1) {
+            mergeExceptions.splice(exIdx, 1);
+            wasRemerge = true;
+            break;
+          }
+        }
+      }
+
+      if (!wasRemerge) {
+        // New merge rule (global)
+        mergeRules.push({ a: lineA, b: lineB });
+      }
+
+      mergeSelection = -1;
+      saveToUndo();
+      processScript();
+    } else {
+      toast('🐱 Lines must be adjacent to merge!');
+      mergeSelection = idx;
+      document.querySelectorAll('.sub-merge').forEach(b => b.classList.remove('selected'));
+      const btn = document.querySelector('.sub-merge[data-merge="' + idx + '"]');
+      if (btn) btn.classList.add('selected');
+    }
+  }
+}
+
+function handleUnmerge(idx) {
+  const mergedText = displayedLines[idx];
+  const rawIdx = displayToRawMap[idx];
+
+  // Find which rule produced this
+  for (const rule of mergeRules) {
+    if (rule.a + rule.b === mergedText) {
+      // Add exception at the exact raw index this displayed line came from
+      mergeExceptions.push({ a: rule.a, b: rule.b, rawIdx: rawIdx });
+      saveToUndo();
+      processScript();
+      return;
+    }
+  }
+}
+
+function getRawSplitLines() {
+  const raw = document.getElementById('scriptInput').value;
+  const maxW = parseInt(document.getElementById('maxChars').value) || 18;
+  const punctMode = document.getElementById('punctMode').value;
+  const smart = document.getElementById('smartBreak').checked;
+  const paras = raw.split(/\n+/).filter(p => p.trim());
+  const lines = [];
+  for (const p of paras) {
+    const stripped = stripENPS(p.trim());
+    if (!stripped) continue;
+    if (smart) {
+      for (const seg of splitAtPunct(stripped)) {
+        const cleaned = stripPunct(seg, punctMode).replace(/\s+/g, ' ').trim();
+        if (!cleaned) continue;
+        if (textWidth(cleaned) <= maxW) lines.push(cleaned);
+        else lines.push(...smartSplitLine(cleaned, maxW));
+      }
+    } else {
+      const cleaned = stripPunct(stripped, punctMode).replace(/\s+/g, ' ').trim();
+      if (!cleaned) continue;
+      if (textWidth(cleaned) <= maxW) lines.push(cleaned);
+      else lines.push(...smartSplitLine(cleaned, maxW));
+    }
+  }
+  return lines;
+}
+
+function navigateToSource(idx) {
+  const ta = document.getElementById('scriptInput');
+  const raw = ta.value;
+  const lineText = displayedLines[idx];
+  if (!lineText || !raw) return;
+
+  // If this is a merged line, find the original two parts
+  let partA = null, partB = null;
+  if (mergedLineIndices.has(idx)) {
+    for (const rule of mergeRules) {
+      if (rule.a + rule.b === lineText) {
+        partA = rule.a;
+        partB = rule.b;
+        break;
+      }
+    }
+  }
+
+  let startPos = -1;
+  let endPos = -1;
+
+  if (partA && partB) {
+    // Merged line: find partA start, then find partB end after it
+    startPos = findInRaw(raw, partA, 0);
+    if (startPos !== -1) {
+      // Search for partB starting from after partA's position
+      const searchFrom = startPos + partA.length;
+      // Look within a reasonable range (there might be punctuation between the two parts)
+      const endSearch = Math.min(raw.length, searchFrom + partB.length + 20);
+      const bPos = findInRaw(raw, partB, searchFrom);
+      if (bPos !== -1) {
+        endPos = bPos + partB.length;
+      } else {
+        endPos = searchFrom + partA.length;
+      }
+    }
+  }
+
+  // Non-merged or fallback
+  if (startPos === -1) {
+    startPos = findInRaw(raw, lineText, 0);
+    if (startPos !== -1) {
+      endPos = startPos + lineText.length;
+    }
+  }
+
+  // Final fallback: progressive shorter chunks
+  if (startPos === -1) {
+    const tryLengths = [12, 8, 5, 3];
+    for (const len of tryLengths) {
+      if (len > lineText.length) continue;
+      const chunk = lineText.slice(0, len);
+      const found = raw.indexOf(chunk);
+      if (found !== -1) { startPos = found; endPos = found + chunk.length; break; }
+    }
+  }
+
+  // Fuzzy fallback
+  if (startPos === -1) {
+    const target = lineText.slice(0, Math.min(lineText.length, 6));
+    let ti = 0;
+    for (let ri = 0; ri < raw.length && ti < target.length; ri++) {
+      if (raw[ri] === target[ti]) { if (ti === 0) startPos = ri; ti++; }
+    }
+    if (ti >= target.length) { endPos = startPos + target.length; }
+    else { startPos = 0; endPos = 0; }
+  }
+
+  if (startPos === -1) { startPos = 0; endPos = 0; }
+
+  ta.focus();
+  ta.setSelectionRange(startPos, endPos);
+  const lineHeight = parseFloat(getComputedStyle(ta).lineHeight) || 24;
+  const newlines = (raw.slice(0, startPos).match(/\n/g) || []).length;
+  ta.scrollTop = Math.max(0, newlines * lineHeight - ta.clientHeight / 3);
+}
+
+// Helper: find text in raw, starting from offset, skipping punctuation gaps
+function findInRaw(raw, text, fromIdx) {
+  // Try exact match first
+  const exact = raw.indexOf(text, fromIdx);
+  if (exact !== -1) return exact;
+
+  // Try first few chars
+  const tryLens = [Math.min(text.length, 8), Math.min(text.length, 5), Math.min(text.length, 3)];
+  for (const len of tryLens) {
+    const chunk = text.slice(0, len);
+    if (chunk.length < 2) continue;
+    const found = raw.indexOf(chunk, fromIdx);
+    if (found !== -1) return found;
+  }
+
+  return -1;
+}
+
+function updateStats(lines) {
+  const t = lines.length, maxW = parseInt(document.getElementById('maxChars').value) || 18;
+  const gap = parseFloat(document.getElementById('gapSec').value) || 3;
+  const over = lines.filter(l => textWidth(l) > maxW).length;
+  const avg = t ? (lines.reduce((s, l) => s + textWidth(l), 0) / t).toFixed(1) : 0;
+  const d = t * gap;
+  document.getElementById('statLines').textContent = t;
+  document.getElementById('statOver').textContent = over;
+  document.getElementById('statAvg').textContent = avg;
+  document.getElementById('statDuration').textContent = pad(Math.floor(d/3600)) + ':' + pad(Math.floor(d%3600/60)) + ':' + pad(Math.floor(d%60));
+}
+
+function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function pad(n) { return String(n).padStart(2,'0'); }
+
+function parseTC(tc) {
+  const m = tc.match(/(\d+):(\d+):(\d+)[,.](\d+)/);
+  return m ? +m[1]*3600000 + +m[2]*60000 + +m[3]*1000 + +m[4] : 0;
+}
+function fmtTC(ms) {
+  const h = Math.floor(ms/3600000); ms %= 3600000;
+  const m = Math.floor(ms/60000); ms %= 60000;
+  const s = Math.floor(ms/1000);
+  return pad(h)+':'+pad(m)+':'+pad(s)+','+String(ms%1000).padStart(3,'0');
+}
+
+function genSRT(lines) {
+  const gap = (parseFloat(document.getElementById('gapSec').value)||3)*1000;
+  let st = parseTC(document.getElementById('startTC').value)||1000;
+  return lines.map((l,i) => { const e=st+gap; const r=(i+1)+'\n'+fmtTC(st)+' --> '+fmtTC(e)+'\n'+l+'\n'; st=e; return r; }).join('\n');
+}
+
+function dl(content, name, mime) {
+  const b = new Blob(['\uFEFF'+content],{type:mime+';charset=utf-8'});
+  const a = document.createElement('a'); a.href=URL.createObjectURL(b); a.download=name; a.click(); URL.revokeObjectURL(a.href);
+}
+
+function getFileName() {
+  const v = document.getElementById('fileName').value.trim();
+  return v || 'subtitles';
+}
+
+const exportJokes = [
+  {msg: 'Script is served! 🍣', sub: 'Your subtitles are ready, chef.'},
+  {msg: 'Purrfect subtitles! ✨', sub: 'Not a single line out of place. Probably.'},
+  {msg: 'Another one in the can! 🎬', sub: 'That\'s a wrap on this script.'},
+  {msg: 'Subtitles go brrr~ 🐱', sub: 'Exported faster than I can catch a fish.'},
+  {msg: 'Mission accomplished! 🎯', sub: 'Now go ripple those timecodes.'},
+  {msg: '\u55B5\u55B5\u55B5~ Done! 📦', sub: 'File exported. Time for a treat?'},
+  {msg: 'Fresh off the press! 📰', sub: 'Hot subtitles, handle with care.'},
+  {msg: 'Boom. Exported. 💥', sub: 'That was easy. You\'re welcome.'},
+];
+
+const sparkleEmojis = ['✨','🐾','⭐','💫','🌟','🎵','♡','🐱'];
+
+// === CAT OVERLAY VARIATIONS ===
+// Shared base: ears, head, body, stripes, feet, tail — only face & extras differ
+const catBase = {
+  before: `<svg viewBox="0 0 16 16" width="180" height="180" style="image-rendering:pixelated;image-rendering:crisp-edges" xmlns="http://www.w3.org/2000/svg">
+    <!-- Ears -->
+    <rect x="2" y="0" width="2" height="2" fill="#f4845f"/><rect x="3" y="1" width="1" height="1" fill="#ffa07a"/>
+    <rect x="12" y="0" width="2" height="2" fill="#f4845f"/><rect x="12" y="1" width="1" height="1" fill="#ffa07a"/>
+    <!-- Head -->
+    <rect x="2" y="2" width="12" height="3" fill="#f4845f"/><rect x="1" y="3" width="14" height="4" fill="#f4845f"/>
+    <rect x="5" y="4" width="6" height="3" fill="#ffc4a8"/>`,
+  after: `<!-- Body -->
+    <rect x="3" y="7" width="10" height="4" fill="#f4845f"/><rect x="5" y="8" width="6" height="3" fill="#ffc4a8"/>
+    <!-- Stripes -->
+    <rect x="4" y="3" width="1" height="1" fill="#d4714a"/><rect x="7" y="2" width="2" height="1" fill="#d4714a"/>
+    <rect x="11" y="3" width="1" height="1" fill="#d4714a"/>
+    <!-- Feet -->
+    <rect x="3" y="11" width="2" height="2" fill="#ffc4a8"/><rect x="11" y="11" width="2" height="2" fill="#ffc4a8"/>
+    <!-- Tail -->
+    <rect x="13" y="9" width="2" height="1" fill="#f4845f"/><rect x="14" y="8" width="2" height="1" fill="#f4845f"/>
+    <rect x="15" y="7" width="1" height="1" fill="#d4714a"/>`
+};
+
+const catVariations = [
+  { // 0: Happy squint (original) — paws up
+    face: `<rect x="4" y="4" width="3" height="1" fill="#4a3728" rx="0.5"/>
+    <rect x="9" y="4" width="3" height="1" fill="#4a3728" rx="0.5"/>
+    <rect x="6" y="5" width="1" height="1" fill="#e8636a"/><rect x="7" y="5" width="2" height="1" fill="#e8636a"/>
+    <rect x="9" y="5" width="1" height="1" fill="#e8636a"/>
+    <rect x="5" y="5" width="1" height="1" fill="#d4917a"/><rect x="10" y="5" width="1" height="1" fill="#d4917a"/>`,
+    extras: `<rect x="2" y="9" width="2" height="2" fill="#ffc4a8"/>
+    <rect x="12" y="9" width="2" height="2" fill="#ffc4a8"/>`
+  },
+  { // 1: Star eyes — amazed
+    face: `<rect x="4" y="4" width="1" height="1" fill="#f0b060"/><rect x="5" y="3" width="1" height="1" fill="#f0b060"/>
+    <rect x="5" y="5" width="1" height="1" fill="#f0b060"/><rect x="6" y="4" width="1" height="1" fill="#f0b060"/>
+    <rect x="10" y="4" width="1" height="1" fill="#f0b060"/><rect x="11" y="3" width="1" height="1" fill="#f0b060"/>
+    <rect x="11" y="5" width="1" height="1" fill="#f0b060"/><rect x="12" y="4" width="1" height="1" fill="#f0b060"/>
+    <rect x="7" y="6" width="2" height="1" fill="#e8636a"/>`,
+    extras: ``
+  },
+  { // 2: Heart eyes — love
+    face: `<rect x="4" y="4" width="1" height="1" fill="#ff8fab"/><rect x="6" y="4" width="1" height="1" fill="#ff8fab"/>
+    <rect x="4" y="5" width="3" height="1" fill="#ff8fab"/><rect x="5" y="3" width="1" height="1" fill="#ff8fab"/>
+    <rect x="10" y="4" width="1" height="1" fill="#ff8fab"/><rect x="12" y="4" width="1" height="1" fill="#ff8fab"/>
+    <rect x="10" y="5" width="3" height="1" fill="#ff8fab"/><rect x="11" y="3" width="1" height="1" fill="#ff8fab"/>
+    <rect x="7" y="6" width="2" height="1" fill="#e8636a"/>`,
+    extras: ``
+  },
+  { // 3: Wink — one eye open, one squint, tongue out
+    face: `<rect x="4" y="4" width="2" height="2" fill="#4a3728"/><rect x="4" y="4" width="1" height="1" fill="#ffffff"/>
+    <rect x="9" y="4" width="3" height="1" fill="#4a3728" rx="0.5"/>
+    <rect x="7" y="5" width="2" height="1" fill="#e8636a"/>
+    <rect x="6" y="6" width="1" height="1" fill="#d4917a"/><rect x="9" y="6" width="1" height="1" fill="#d4917a"/>
+    <rect x="8" y="6" width="1" height="1" fill="#ff8fab"/>`,
+    extras: `<rect x="5" y="5" width="1" height="1" fill="#d4917a"/><rect x="10" y="5" width="1" height="1" fill="#d4917a"/>`
+  },
+  { // 4: Sunglasses — cool cat
+    face: `<rect x="3" y="4" width="4" height="2" fill="#4a3728"/><rect x="9" y="4" width="4" height="2" fill="#4a3728"/>
+    <rect x="7" y="4" width="2" height="1" fill="#4a3728"/>
+    <rect x="4" y="4" width="2" height="1" fill="#6a5748"/>
+    <rect x="10" y="4" width="2" height="1" fill="#6a5748"/>
+    <rect x="7" y="6" width="2" height="1" fill="#d4917a"/>`,
+    extras: ``
+  },
+  { // 5: Party hat — celebrating, big open smile
+    face: `<rect x="4" y="4" width="2" height="2" fill="#4a3728"/><rect x="4" y="4" width="1" height="1" fill="#ffffff"/>
+    <rect x="10" y="4" width="2" height="2" fill="#4a3728"/><rect x="10" y="4" width="1" height="1" fill="#ffffff"/>
+    <rect x="6" y="5" width="4" height="2" fill="#e8636a"/>
+    <rect x="5" y="5" width="1" height="1" fill="#d4917a"/><rect x="10" y="5" width="1" height="1" fill="#d4917a"/>`,
+    extras: `<!-- Party hat -->
+    <rect x="7" y="-2" width="2" height="2" fill="#b8a9e8"/>
+    <rect x="6" y="0" width="4" height="1" fill="#b8a9e8"/><rect x="6" y="-1" width="4" height="1" fill="#ff8fab"/>
+    <rect x="8" y="-3" width="1" height="1" fill="#f0b060"/>`
+  },
+  { // 6: Sleepy — zzZ, one eye cracked open
+    face: `<rect x="4" y="5" width="3" height="1" fill="#4a3728" rx="0.5"/>
+    <rect x="9" y="4" width="2" height="1" fill="#4a3728"/><rect x="9" y="4" width="1" height="1" fill="#ffffff"/>
+    <rect x="7" y="5" width="2" height="1" fill="#d4917a"/>
+    <rect x="5" y="6" width="1" height="1" fill="#ff8fab"/><rect x="10" y="6" width="1" height="1" fill="#ff8fab"/>`,
+    extras: `<!-- zzZ -->
+    <rect x="14" y="1" width="1" height="1" fill="#b8a9e8" opacity="0.7"/>
+    <rect x="15" y="0" width="1" height="1" fill="#b8a9e8" opacity="0.5"/>`
+  },
+  { // 7: Blush — big sparkle eyes, rosy cheeks
+    face: `<rect x="4" y="4" width="2" height="2" fill="#4a3728"/><rect x="4" y="4" width="1" height="1" fill="#ffffff"/>
+    <rect x="5" y="5" width="1" height="1" fill="#ffffff"/>
+    <rect x="10" y="4" width="2" height="2" fill="#4a3728"/><rect x="10" y="4" width="1" height="1" fill="#ffffff"/>
+    <rect x="11" y="5" width="1" height="1" fill="#ffffff"/>
+    <rect x="7" y="5" width="2" height="1" fill="#e8636a"/>
+    <rect x="3" y="5" width="2" height="1" fill="#ff8fab" opacity="0.45"/>
+    <rect x="11" y="5" width="2" height="1" fill="#ff8fab" opacity="0.45"/>`,
+    extras: ``
+  }
+];
+
+function buildCatSVG(variation) {
+  const v = catVariations[variation];
+  return catBase.before + v.face + catBase.after + (v.extras || '') + '</svg>';
+}
+
+function showExportOverlay(filename) {
+  const overlay = document.getElementById('exportOverlay');
+  const joke = exportJokes[Math.floor(Math.random() * exportJokes.length)];
+
+  document.getElementById('exportMsg').textContent = joke.msg;
+  document.getElementById('exportSub').textContent = filename + ' · ' + joke.sub;
+
+  // Random cat variation
+  const catIdx = Math.floor(Math.random() * catVariations.length);
+  document.getElementById('bigCatContainer').innerHTML = buildCatSVG(catIdx);
+
+  // Add sparkles
+  document.querySelectorAll('.export-overlay .sparkle').forEach(s => s.remove());
+  for (let i = 0; i < 6; i++) {
+    const sp = document.createElement('span');
+    sp.className = 'sparkle';
+    sp.textContent = sparkleEmojis[Math.floor(Math.random() * sparkleEmojis.length)];
+    sp.style.left = (15 + Math.random() * 70) + '%';
+    sp.style.top = (15 + Math.random() * 70) + '%';
+    sp.style.animationDelay = (Math.random() * 1.0) + 's';
+    overlay.appendChild(sp);
+  }
+
+  overlay.classList.add('show');
+  setTimeout(() => { overlay.classList.remove('show'); }, 3000);
+}
+
+function exportSRT() { if(!displayedLines.length){toast('🐱 No lines to export!');return;} const name=getFileName()+'.srt'; dl(genSRT(displayedLines),name,'text/plain'); showExportOverlay(name); }
+function exportTXT() { if(!displayedLines.length){toast('🐱 No lines to export!');return;} const name=getFileName()+'.txt'; dl(displayedLines.join('\n'),name,'text/plain'); showExportOverlay(name); }
+function copyLines() { if(!displayedLines.length){toast('🐱 Nothing to copy!');return;} navigator.clipboard.writeText(displayedLines.join('\n')).then(()=>showExportOverlay('clipboard')); }
+function clearAll() { document.getElementById('scriptInput').value=''; mergeSelection=-1; displayedLines=[]; mergeRules=[]; mergeExceptions=[]; prevInput=''; mergedLineIndices=new Set(); displayToRawMap=[]; processScript(); }
+
+const meows=['Meow!','Nyaa~','Miao~','\u55B5!','\u55B5\u55B5~','Purrr...','\uD83D\uDC1F?','Hewwo~','Mrrrp!'];
+const idles=['Hi~!','...zzZ','\u2661','\u266A','meow?','nyaa','\u55B5~'];
+function meow() {
+  const cat = document.getElementById('floatingCat');
+  const bubble = document.getElementById('catBubble');
+  bubble.textContent = meows[Math.floor(Math.random()*meows.length)];
+  cat.classList.add('clicked');
+  cat.style.transform = 'scale(1.25) rotate(-8deg)';
+  toast('\uD83D\uDC31 ' + bubble.textContent);
+  setTimeout(() => { cat.style.transform = ''; cat.classList.remove('clicked'); }, 400);
+}
+
+// Feed the cat - drag fish to cat
+const eatReactions=['\u55B5\uFF01\u597D\u5403\uFF01','Yummy!','Om nom nom!','\u55B5~\u8C22\u8C22!','\u2661 \u2661 \u2661','\u597D\u9999\uFF01','More pls!','\u55B5\u55B5\u55B5~','*munch*','*chomp*'];
+let feedCooldown = false;
+let isDragging = false;
+let dragOffsetX = 0, dragOffsetY = 0;
+
+function randomFishPos() {
+  // Use the .app container to stay within content bounds
+  const app = document.querySelector('.app');
+  const appRect = app.getBoundingClientRect();
+  const fishW = 36; // fish svg width
+  const minX = appRect.left + 10;
+  const maxX = appRect.right - fishW - 10;
+  const catLeft = 30, catRight = 130; // cat zone to avoid
+  let x;
+  let tries = 0;
+  do {
+    x = minX + Math.floor(Math.random() * (maxX - minX));
+    tries++;
+  } while (x > catLeft && x < catRight && tries < 20);
+  return Math.max(minX, Math.min(x, maxX));
+}
+
+// Initial random position
+(function initFish() {
+  const fish = document.getElementById('deadFish');
+  fish.style.left = randomFishPos() + 'px';
+})();
+
+// Reposition fish on resize so it stays in view
+window.addEventListener('resize', function() {
+  const fish = document.getElementById('deadFish');
+  if (!isDragging && !fish.classList.contains('grabbed')) {
+    resetFishPos(fish);
+  }
+});
+
+function getPos(e) {
+  if (e.touches) return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+  return { x: e.clientX, y: e.clientY };
+}
+
+function startDrag(e) {
+  if (feedCooldown) return;
+  e.preventDefault();
+  const fish = document.getElementById('deadFish');
+  const rect = fish.getBoundingClientRect();
+  const pos = getPos(e);
+  dragOffsetX = pos.x - rect.left;
+  dragOffsetY = pos.y - rect.top;
+  isDragging = true;
+  fish.classList.add('dragging');
+  // Switch to top/left positioning for free movement
+  fish.style.bottom = 'auto';
+  fish.style.top = rect.top + 'px';
+  fish.style.left = rect.left + 'px';
+}
+
+function onDrag(e) {
+  if (!isDragging) return;
+  e.preventDefault();
+  const fish = document.getElementById('deadFish');
+  const pos = getPos(e);
+  fish.style.left = (pos.x - dragOffsetX) + 'px';
+  fish.style.top = (pos.y - dragOffsetY) + 'px';
+}
+
+function endDrag(e) {
+  if (!isDragging) return;
+  isDragging = false;
+  const fish = document.getElementById('deadFish');
+  fish.classList.remove('dragging');
+
+  // Check if fish overlaps with cat
+  const fishRect = fish.getBoundingClientRect();
+  const catRect = document.getElementById('floatingCat').getBoundingClientRect();
+
+  const fishCX = fishRect.left + fishRect.width / 2;
+  const fishCY = fishRect.top + fishRect.height / 2;
+
+  // Hit zone: within ~40px of cat center
+  const catCX = catRect.left + catRect.width / 2;
+  const catCY = catRect.top + catRect.height / 2;
+  const dist = Math.sqrt((fishCX - catCX) ** 2 + (fishCY - catCY) ** 2);
+
+  if (dist < 55) {
+    // Fed the cat!
+    triggerEat(fish);
+  } else {
+    // Snap back to ground
+    resetFishPos(fish);
+  }
+}
+
+function triggerEat(fish) {
+  feedCooldown = true;
+  const cat = document.getElementById('floatingCat');
+  const bubble = document.getElementById('catBubble');
+
+  fish.classList.add('grabbed');
+
+  setTimeout(() => {
+    cat.classList.add('eating');
+    bubble.textContent = eatReactions[Math.floor(Math.random() * eatReactions.length)];
+    bubble.style.transform = 'translateX(-50%) scale(1)';
+    bubble.style.opacity = '1';
+    toast('\uD83D\uDC31 ' + bubble.textContent);
+  }, 150);
+
+  setTimeout(() => {
+    cat.classList.remove('eating');
+    bubble.style.transform = '';
+    bubble.style.opacity = '';
+    fish.classList.remove('grabbed');
+    resetFishPos(fish);
+    feedCooldown = false;
+  }, 3200);
+}
+
+function resetFishPos(fish) {
+  fish.style.top = '';
+  fish.style.bottom = '40px';
+  fish.style.left = randomFishPos() + 'px';
+}
+
+// Mouse events
+const fishEl = document.getElementById('deadFish');
+fishEl.addEventListener('mousedown', startDrag);
+document.addEventListener('mousemove', onDrag);
+document.addEventListener('mouseup', endDrag);
+// Touch events
+fishEl.addEventListener('touchstart', startDrag, { passive: false });
+document.addEventListener('touchmove', onDrag, { passive: false });
+document.addEventListener('touchend', endDrag);
+
+// Randomize bubble text on hover
+document.getElementById('floatingCat').addEventListener('mouseenter', function() {
+  document.getElementById('catBubble').textContent = idles[Math.floor(Math.random()*idles.length)];
+});
+
+function toast(msg) { const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2000); }
+
+// === UNDO / REDO SYSTEM ===
+const MAX_HISTORY = 50;
+let undoStack = [];
+let redoStack = [];
+let isUndoRedo = false;
+let lastSavedSnap = '';
+
+function takeSnapshot() {
+  return {
+    input: document.getElementById('scriptInput').value,
+    rules: JSON.parse(JSON.stringify(mergeRules)),
+    exceptions: JSON.parse(JSON.stringify(mergeExceptions)),
+    prevInput: prevInput
+  };
+}
+
+function snapKey(snap) {
+  return snap.input + '|' + JSON.stringify(snap.rules) + '|' + JSON.stringify(snap.exceptions);
+}
+
+function saveToUndo() {
+  if (isUndoRedo) return;
+  const snap = takeSnapshot();
+  const key = snapKey(snap);
+  if (key === lastSavedSnap) return;
+  undoStack.push(snap);
+  if (undoStack.length > MAX_HISTORY) undoStack.shift();
+  redoStack = [];
+  lastSavedSnap = key;
+  updateUndoRedoButtons();
+}
+
+function applySnapshot(snap) {
+  isUndoRedo = true;
+  document.getElementById('scriptInput').value = snap.input;
+  mergeRules = JSON.parse(JSON.stringify(snap.rules));
+  mergeExceptions = JSON.parse(JSON.stringify(snap.exceptions));
+  prevInput = snap.prevInput;
+  processScript();
+  lastSavedSnap = snapKey(snap);
+  isUndoRedo = false;
+  updateUndoRedoButtons();
+}
+
+function undo() {
+  if (undoStack.length < 2) return;
+  redoStack.push(undoStack.pop());
+  const snap = undoStack[undoStack.length - 1];
+  applySnapshot(snap);
+}
+
+function redo() {
+  if (redoStack.length === 0) return;
+  const snap = redoStack.pop();
+  undoStack.push(snap);
+  applySnapshot(snap);
+}
+
+function updateUndoRedoButtons() {
+  document.getElementById('undoBtn').disabled = undoStack.length < 2;
+  document.getElementById('redoBtn').disabled = redoStack.length === 0;
+}
+
+// Keyboard shortcuts
+document.addEventListener('keydown', function(e) {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+    e.preventDefault(); undo();
+  } else if ((e.ctrlKey || e.metaKey) && e.key === 'z' && e.shiftKey) {
+    e.preventDefault(); redo();
+  } else if ((e.ctrlKey || e.metaKey) && e.key === 'y') {
+    e.preventDefault(); redo();
+  }
+});
+
+// On input: save before state, process, then save after state
+function onInputChange() { saveToUndo(); processScript(); saveToUndo(); }
+document.getElementById('scriptInput').addEventListener('input', onInputChange);
+document.getElementById('maxChars').addEventListener('input', onInputChange);
+document.getElementById('gapSec').addEventListener('input', onInputChange);
+document.getElementById('punctMode').addEventListener('change', onInputChange);
+document.getElementById('smartBreak').addEventListener('change', onInputChange);
+</script>
+</body>
+</html>

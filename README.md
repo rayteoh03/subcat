@@ -10,7 +10,7 @@ Paste a paragraph. Get subtitle lines. Export .SRT.
 
 No install · No server · Fully offline
 
-[**→ Open SubCat**](https://YOUR_USERNAME.github.io/YOUR_REPO_NAME)
+[**→ Open SubCat**](https://rayteoh03.github.io/subcat/)
 
 </div>
 

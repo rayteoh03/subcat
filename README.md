@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="https://em-content.zobj.net/source/apple/391/cat-face_1f431.png" width="80" alt="SubCat">
+<img src="subcat.png" width="80" alt="SubCat" style="image-rendering: pixelated;">
 
 # SubCat
 
@@ -73,9 +73,3 @@ SubCat is a single `index.html` file. To host it:
 ## License
 
 MIT
-
----
-
-<div align="center">
-<sub>There's a fish somewhere. The cat is hungry. 🐟</sub>
-</div>

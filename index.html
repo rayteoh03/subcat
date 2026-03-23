@@ -99,6 +99,9 @@
   }
   .settings-row.top { grid-template-columns: 1.5fr 0.8fr 0.8fr 1.2fr; margin-bottom: 12px; }
   .settings-row.bottom { grid-template-columns: 1.5fr 1fr; }
+  .toggles-stack {
+    display: flex; flex-direction: column; gap: 6px; padding-top: 14px;
+  }
   @media (max-width: 768px) {
     .settings-row.top { grid-template-columns: 1fr 1fr; }
     .settings-row.bottom { grid-template-columns: 1fr; }
@@ -117,7 +120,14 @@
   .setting-group input:focus, .setting-group select:focus {
     border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow);
   }
-  .setting-group select { cursor: pointer; }
+  .setting-group select {
+    cursor: pointer;
+    appearance: none; -webkit-appearance: none; -moz-appearance: none;
+    padding-right: 36px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%239a7e6b' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+  }
 
   .checkbox-inline {
     display: flex; align-items: center; gap: 8px; padding-top: 4px;
@@ -360,6 +370,78 @@
   }
 
   .paw-deco { position: fixed; top: 14px; right: 20px; opacity: 0.08; z-index: 0; pointer-events: none; }
+
+  /* Manual modal */
+  .manual-overlay {
+    position: fixed; inset: 0; z-index: 200;
+    background: rgba(254,246,238,0.96);
+    display: none; overflow-y: auto;
+    padding: 40px 20px 80px;
+  }
+  .manual-overlay.show { display: block; }
+  .manual-inner { max-width: 720px; margin: 0 auto; position: relative; }
+  .manual-close {
+    position: sticky; top: 0; z-index: 10; text-align: right; padding-bottom: 12px;
+  }
+  .manual-close button {
+    font-family: var(--sans); font-size: 13px; font-weight: 700; padding: 8px 16px; border-radius: 10px;
+    border: 2px solid var(--border); background: var(--surface); color: var(--text); cursor: pointer;
+    box-shadow: 3px 3px 0 rgba(0,0,0,0.04);
+  }
+  .manual-close button:hover { border-color: var(--accent); }
+  .m-title { text-align: center; padding: 24px 0 32px; }
+  .m-title h2 { font-size: 36px; font-weight: 800; color: var(--accent); }
+  .m-title .m-sub { font-size: 14px; color: var(--text-dim); font-weight: 600; }
+  .m-title .m-ver { font-size: 11px; color: var(--text-muted); font-family: var(--mono); margin-top: 6px; }
+  .m-panel {
+    background: var(--surface); border: 2.5px solid var(--border); border-radius: 16px;
+    padding: 22px 26px; margin-bottom: 20px; box-shadow: 4px 4px 0 rgba(244,132,95,0.08);
+  }
+  .m-section { font-size: 20px; font-weight: 800; color: var(--accent); margin-bottom: 10px; display: flex; align-items: center; gap: 10px; }
+  .m-num {
+    font-family: var(--mono); font-size: 12px; font-weight: 700;
+    background: var(--accent); color: #fff; width: 26px; height: 26px;
+    border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .m-cat-row { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 14px; }
+  .m-cat-row.flip { flex-direction: row-reverse; }
+  .m-cat { flex-shrink: 0; width: 44px; height: 44px; image-rendering: pixelated; image-rendering: crisp-edges; }
+  .m-speech {
+    background: var(--bg); border: 2px solid var(--border); border-radius: 12px;
+    padding: 11px 15px; font-size: 13px; font-weight: 600; color: var(--text); flex: 1;
+    position: relative;
+  }
+  .m-speech strong { color: var(--accent); }
+  .m-tag {
+    display: inline-block; font-family: var(--mono); font-size: 10px; font-weight: 700;
+    background: rgba(244,132,95,0.1); color: var(--accent);
+    padding: 2px 7px; border-radius: 5px; margin: 1px 2px;
+  }
+  .m-tag.mint { background: rgba(126,205,160,0.12); color: #4a9e6e; }
+  .m-tag.lav { background: rgba(184,169,232,0.12); color: #7a6bb8; }
+  .m-tag.pink { background: rgba(255,143,171,0.12); color: #d46b8a; }
+  .m-detail {
+    font-size: 13px; color: var(--text-dim); padding: 9px 15px;
+    border-left: 3px solid var(--border); margin: 9px 0; line-height: 1.8;
+  }
+  .m-detail strong { color: var(--text); }
+  .m-example {
+    background: #fdf3eb; border: 1.5px dashed var(--border); border-radius: 10px;
+    padding: 11px 15px; margin: 9px 0; font-size: 12px;
+  }
+  .m-example .m-label { font-size: 9px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); font-weight: 700; margin-bottom: 3px; }
+  .m-example .m-zh { font-family: var(--cjk); font-size: 13px; color: var(--text); line-height: 1.8; }
+  .m-example .m-arrow { text-align: center; color: var(--accent); font-size: 16px; margin: 4px 0; }
+  .m-example .m-strike { text-decoration: line-through; color: var(--text-muted); }
+  .m-kbd {
+    font-family: var(--mono); font-size: 10px; font-weight: 700;
+    background: var(--surface); border: 1.5px solid var(--border);
+    padding: 2px 8px; border-radius: 5px; box-shadow: 0 2px 0 var(--border); color: var(--text);
+  }
+  .m-shortcut { display: flex; gap: 10px; align-items: center; margin: 5px 0; }
+  .m-shortcut-label { font-size: 12px; color: var(--text-dim); font-weight: 600; }
+  .m-divider { height: 2px; background: linear-gradient(90deg, transparent, var(--border), transparent); margin: 28px 0; }
+  .m-footer { text-align: center; color: var(--text-muted); font-size: 11px; font-family: var(--mono); margin-top: 32px; }
 </style>
 </head>
 <body>
@@ -418,9 +500,11 @@
           <option value="strip-cjk">Strip CJK punct only</option>
         </select>
       </div>
-      <div class="checkbox-inline" style="padding-bottom:2px;">
-        <input type="checkbox" id="smartBreak" checked>
-        <label for="smartBreak">Smart CJK line-breaking</label>
+      <div class="toggles-stack">
+        <div class="checkbox-inline">
+          <input type="checkbox" id="stripDialogue" checked>
+          <label for="stripDialogue">Remove dialogue quotes</label>
+        </div>
       </div>
     </div>
   </div>
@@ -464,6 +548,8 @@
     <button onclick="exportTXT()">📄 Export .TXT</button>
     <button onclick="copyLines()">📋 Copy lines</button>
     <button onclick="clearAll()">🗑 Clear</button>
+    <div class="actions-sep"></div>
+    <button onclick="showManual()">📖 Manual</button>
   </div>
 </div>
 
@@ -580,7 +666,7 @@
   </svg>
 </div>
 
-<div class="footer-credit">SubCat v1.2 · 2026</div>
+<div class="footer-credit">SubCat v1.3 · 2026</div>
 
 <!-- Cat standing on the grass -->
 <div class="floating-cat" id="floatingCat" onclick="meow()">
@@ -790,13 +876,39 @@ function splitAtPunct(text) {
   return segments;
 }
 
-// === SMART SPLIT WITH WIDTH, ENGLISH PROTECTION, BALANCING ===
+// === WORD BOUNDARY DETECTION (Intl.Segmenter) ===
+const _zhSegmenter = (typeof Intl !== 'undefined' && Intl.Segmenter)
+  ? new Intl.Segmenter('zh', { granularity: 'word' })
+  : null;
+
+// Returns a Set of valid word boundary indices for the given text
+function getWordBoundaries(text) {
+  const boundaries = new Set([0, text.length]);
+  if (!_zhSegmenter) {
+    // Fallback: every CJK char is a boundary (old behavior)
+    for (let i = 0; i <= text.length; i++) boundaries.add(i);
+    return boundaries;
+  }
+  for (const seg of _zhSegmenter.segment(text)) {
+    boundaries.add(seg.index);
+    boundaries.add(seg.index + seg.segment.length);
+  }
+  return boundaries;
+}
+
+// Check if an index is a word boundary
+function isWordBoundary(idx, boundaries) {
+  return boundaries.has(idx);
+}
+
+// === SMART SPLIT WITH WIDTH, ENGLISH PROTECTION, WORD BOUNDARIES, BALANCING ===
 function smartSplitLine(text, maxW) {
   const tw = textWidth(text);
   if (tw <= maxW) return [text];
 
   const engBlocks = findEnglishBlocks(text);
   const protRanges = findProtectedRanges(text);
+  const wordBounds = getWordBoundaries(text);
 
   // Smart balance: if slightly over (up to 1.25x), split into two balanced halves
   if (tw <= maxW * 1.25) {
@@ -809,10 +921,23 @@ function smartSplitLine(text, maxW) {
     for (let i = Math.max(1, midIdx - searchRange); i <= Math.min(text.length - 1, midIdx + searchRange); i++) {
       if (isInsideEnglishBlock(i, engBlocks)) continue;
       if (isProtectedIdx(i, protRanges)) continue;
+      if (!isWordBoundary(i, wordBounds)) continue;
       const leftW = widthUpTo(text, i);
       const diff = Math.abs(leftW - halfW);
       if (diff < bestDiff) { bestDiff = diff; bestSplit = i; }
     }
+    // If no word boundary found, fallback to any safe position
+    if (bestDiff === Infinity) {
+      for (let i = Math.max(1, midIdx - searchRange); i <= Math.min(text.length - 1, midIdx + searchRange); i++) {
+        if (isInsideEnglishBlock(i, engBlocks)) continue;
+        if (isProtectedIdx(i, protRanges)) continue;
+        const leftW = widthUpTo(text, i);
+        const diff = Math.abs(leftW - halfW);
+        if (diff < bestDiff) { bestDiff = diff; bestSplit = i; }
+      }
+    }
+    // Never let 、start the next line — nudge split past it
+    if (text[bestSplit] === '\u3001') bestSplit++;
     const l1 = text.slice(0, bestSplit).trim();
     const l2 = text.slice(bestSplit).trim();
     return [l1, l2].filter(l => l);
@@ -829,14 +954,22 @@ function smartSplitLine(text, maxW) {
     const minIdx = Math.max(1, Math.floor(cutIdx * 0.4));
     let found = false;
 
-    // Look backwards for safe split: not inside English block or protected range
+    // Look backwards for safe split: prefer word boundaries
     for (let i = cutIdx - 1; i >= minIdx; i--) {
       if (isInsideEnglishBlock(offset + i, engBlocks)) continue;
       if (isProtectedIdx(offset + i, protRanges)) continue;
-      // Prefer spaces
       if (rem[i] === ' ') { sp = i + 1; found = true; break; }
+      if (isWordBoundary(offset + i, wordBounds)) { sp = i; found = true; break; }
     }
-    // If no space, find any safe position
+    // If no word boundary, find any safe position that IS a word boundary (wider search)
+    if (!found) {
+      for (let i = cutIdx - 1; i >= minIdx; i--) {
+        if (!isInsideEnglishBlock(offset + i, engBlocks) && !isProtectedIdx(offset + i, protRanges) && isWordBoundary(offset + i, wordBounds)) {
+          sp = i; found = true; break;
+        }
+      }
+    }
+    // Last resort: any safe position even if not a word boundary
     if (!found) {
       for (let i = cutIdx - 1; i >= minIdx; i--) {
         if (!isInsideEnglishBlock(offset + i, engBlocks) && !isProtectedIdx(offset + i, protRanges)) {
@@ -852,6 +985,9 @@ function smartSplitLine(text, maxW) {
         }
       }
     }
+
+    // Never let 、start the next line — nudge split past it
+    if (sp < rem.length && rem[sp] === '\u3001') sp++;
 
     lines.push(rem.slice(0, sp).trim());
     rem = rem.slice(sp);
@@ -873,11 +1009,83 @@ function stripENPS(text) {
     .trim();
 }
 
+// === DIALOGUE QUOTE STRIPPING ===
+// Strips attributed dialogue: [attribution keyword]「...」
+// Looks back from the attribution to the previous sentence-ending punct or start of text
+// Attribution keywords: 說 表示 指出 認為 強調 透露 回應 提到 or just ：/: before 「
+function stripDialogueQuotes(text) {
+  // Pattern: find all 「...」 blocks
+  const result = [];
+  let cursor = 0;
+
+  while (cursor < text.length) {
+    // Find next 「
+    const openIdx = text.indexOf('\u300C', cursor);
+    if (openIdx === -1) {
+      result.push(text.slice(cursor));
+      break;
+    }
+    // Find matching 」
+    const closeIdx = text.indexOf('\u300D', openIdx + 1);
+    if (closeIdx === -1) {
+      // No closing bracket, keep the rest as-is
+      result.push(text.slice(cursor));
+      break;
+    }
+
+    // Check if this 「 has attribution before it
+    // Look at the text between cursor (or last sentence break) and openIdx
+    const beforeQuote = text.slice(cursor, openIdx);
+
+    // Attribution patterns: 說，說：表示，表示：指出，指出：認為，強調，透露，回應，提到， or just ： right before
+    const attrPattern = /(?:說|表示|指出|認為|強調|透露|回應|提到)\s*[，,：:]\s*$/;
+    const colonBeforePattern = /[：:]\s*$/;
+    const hasAttribution = attrPattern.test(beforeQuote) || colonBeforePattern.test(beforeQuote);
+
+    if (hasAttribution) {
+      // Find where the attribution sentence starts: look back to previous sentence break
+      // Include commas as boundaries — the comma before the speaker name is a natural cut point
+      const sentenceEnders = /[。！？，,\n]/g;
+      let lastBreak = -1;
+      let match;
+      // Search within the beforeQuote for the last sentence ender
+      const searchZone = text.slice(cursor, openIdx);
+      while ((match = sentenceEnders.exec(searchZone)) !== null) {
+        // We want the last sentence break that is BEFORE the attribution keyword
+        // Check if there's still an attribution keyword after this break
+        const afterBreak = searchZone.slice(match.index + 1);
+        if (attrPattern.test(afterBreak) || colonBeforePattern.test(afterBreak)) {
+          lastBreak = match.index;
+        }
+      }
+
+      // Keep text from cursor up to the sentence break (inclusive of the break punct)
+      if (lastBreak >= 0) {
+        result.push(text.slice(cursor, cursor + lastBreak + 1));
+      }
+      // else: attribution is at the very start of the chunk — skip everything
+
+      // Skip past the closing 」 and any trailing sentence punct (。)
+      let afterClose = closeIdx + 1;
+      while (afterClose < text.length && /[。！？]/.test(text[afterClose])) {
+        afterClose++;
+      }
+      cursor = afterClose;
+    } else {
+      // No attribution — keep everything up to and including this 「...」
+      result.push(text.slice(cursor, closeIdx + 1));
+      cursor = closeIdx + 1;
+    }
+  }
+
+  return result.join('').replace(/\s{2,}/g, ' ').trim();
+}
+
 function processScript() {
   const raw = document.getElementById('scriptInput').value;
   const maxW = parseInt(document.getElementById('maxChars').value) || 18;
   const punctMode = document.getElementById('punctMode').value;
-  const smart = document.getElementById('smartBreak').checked;
+  const dialogueStrip = document.getElementById('stripDialogue').checked;
   document.getElementById('inputCount').textContent = raw.length + ' chars';
   mergeSelection = -1;
 
@@ -914,22 +1122,14 @@ function processScript() {
   let allLines = [];
 
   for (const p of paras) {
-    const stripped = stripENPS(p.trim());
+    let stripped = stripENPS(p.trim());
+    if (!stripped) continue;
+    if (dialogueStrip) stripped = stripDialogueQuotes(stripped);
     if (!stripped) continue;
 
-    if (smart) {
-      const punctSegments = splitAtPunct(stripped);
-      for (const seg of punctSegments) {
-        const cleaned = stripPunct(seg, punctMode).replace(/\s+/g, ' ').trim();
-        if (!cleaned) continue;
-        if (textWidth(cleaned) <= maxW) {
-          allLines.push(cleaned);
-        } else {
-          allLines.push(...smartSplitLine(cleaned, maxW));
-        }
-      }
-    } else {
-      const cleaned = stripPunct(stripped, punctMode).replace(/\s+/g, ' ').trim();
+    const punctSegments = splitAtPunct(stripped);
+    for (const seg of punctSegments) {
+      const cleaned = stripPunct(seg, punctMode).replace(/\s+/g, ' ').trim();
       if (!cleaned) continue;
       if (textWidth(cleaned) <= maxW) {
         allLines.push(cleaned);
@@ -1142,21 +1342,16 @@ function getRawSplitLines() {
   const raw = document.getElementById('scriptInput').value;
   const maxW = parseInt(document.getElementById('maxChars').value) || 18;
   const punctMode = document.getElementById('punctMode').value;
-  const smart = document.getElementById('smartBreak').checked;
+  const dialogueStrip = document.getElementById('stripDialogue').checked;
   const paras = raw.split(/\n+/).filter(p => p.trim());
   const lines = [];
   for (const p of paras) {
-    const stripped = stripENPS(p.trim());
+    let stripped = stripENPS(p.trim());
     if (!stripped) continue;
-    if (smart) {
-      for (const seg of splitAtPunct(stripped)) {
-        const cleaned = stripPunct(seg, punctMode).replace(/\s+/g, ' ').trim();
-        if (!cleaned) continue;
-        if (textWidth(cleaned) <= maxW) lines.push(cleaned);
-        else lines.push(...smartSplitLine(cleaned, maxW));
-      }
-    } else {
-      const cleaned = stripPunct(stripped, punctMode).replace(/\s+/g, ' ').trim();
+    if (dialogueStrip) stripped = stripDialogueQuotes(stripped);
+    if (!stripped) continue;
+    for (const seg of splitAtPunct(stripped)) {
+      const cleaned = stripPunct(seg, punctMode).replace(/\s+/g, ' ').trim();
       if (!cleaned) continue;
       if (textWidth(cleaned) <= maxW) lines.push(cleaned);
       else lines.push(...smartSplitLine(cleaned, maxW));
@@ -1681,7 +1876,140 @@ document.getElementById('scriptInput').addEventListener('input', onInputChange);
 document.getElementById('maxChars').addEventListener('input', onInputChange);
 document.getElementById('gapSec').addEventListener('input', onInputChange);
 document.getElementById('punctMode').addEventListener('change', onInputChange);
-document.getElementById('smartBreak').addEventListener('change', onInputChange);
+document.getElementById('stripDialogue').addEventListener('change', onInputChange);
+
+// === MANUAL ===
+function showManual() { document.getElementById('manualOverlay').classList.add('show'); document.body.style.overflow = 'hidden'; }
+function hideManual() { document.getElementById('manualOverlay').classList.remove('show'); document.body.style.overflow = ''; }
 </script>
+
+<div class="manual-overlay" id="manualOverlay">
+<div class="manual-inner">
+  <div class="manual-close"><button onclick="hideManual()">✕ Close</button></div>
+
+  <div class="m-title">
+    <svg style="image-rendering:pixelated;image-rendering:crisp-edges;" viewBox="0 0 16 16" width="64" height="64" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="0" width="2" height="2" fill="#f4845f"/><rect x="3" y="1" width="1" height="1" fill="#ffa07a"/><rect x="12" y="0" width="2" height="2" fill="#f4845f"/><rect x="12" y="1" width="1" height="1" fill="#ffa07a"/><rect x="2" y="2" width="12" height="3" fill="#f4845f"/><rect x="1" y="3" width="14" height="4" fill="#f4845f"/><rect x="5" y="4" width="6" height="3" fill="#ffc4a8"/><rect x="4" y="4" width="2" height="2" fill="#4a3728"/><rect x="4" y="4" width="1" height="1" fill="#fff"/><rect x="10" y="4" width="2" height="2" fill="#4a3728"/><rect x="10" y="4" width="1" height="1" fill="#fff"/><rect x="7" y="5" width="2" height="1" fill="#e8636a"/><rect x="6" y="6" width="1" height="1" fill="#d4917a"/><rect x="9" y="6" width="1" height="1" fill="#d4917a"/><rect x="3" y="7" width="10" height="4" fill="#f4845f"/><rect x="5" y="8" width="6" height="3" fill="#ffc4a8"/><rect x="3" y="11" width="2" height="2" fill="#ffc4a8"/><rect x="11" y="11" width="2" height="2" fill="#ffc4a8"/><rect x="13" y="9" width="2" height="1" fill="#f4845f"/><rect x="14" y="8" width="2" height="1" fill="#f4845f"/><rect x="15" y="7" width="1" height="1" fill="#d4714a"/></svg>
+    <h2>SubCat</h2>
+    <div class="m-sub">Subtitle Line Formatter — Manual</div>
+    <div class="m-ver">v1.3</div>
+  </div>
+
+  <div class="m-panel">
+    <div class="m-section"><span class="m-num">1</span> What is SubCat?</div>
+    <div class="m-cat-row">
+      <svg class="m-cat" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="0" width="2" height="2" fill="#f4845f"/><rect x="3" y="1" width="1" height="1" fill="#ffa07a"/><rect x="12" y="0" width="2" height="2" fill="#f4845f"/><rect x="12" y="1" width="1" height="1" fill="#ffa07a"/><rect x="2" y="2" width="12" height="3" fill="#f4845f"/><rect x="1" y="3" width="14" height="4" fill="#f4845f"/><rect x="5" y="4" width="6" height="3" fill="#ffc4a8"/><rect x="4" y="4" width="2" height="2" fill="#4a3728"/><rect x="4" y="4" width="1" height="1" fill="#fff"/><rect x="10" y="4" width="2" height="2" fill="#4a3728"/><rect x="10" y="4" width="1" height="1" fill="#fff"/><rect x="7" y="5" width="2" height="1" fill="#e8636a"/><rect x="6" y="6" width="1" height="1" fill="#d4917a"/><rect x="9" y="6" width="1" height="1" fill="#d4917a"/><rect x="3" y="7" width="10" height="4" fill="#f4845f"/><rect x="5" y="8" width="6" height="3" fill="#ffc4a8"/><rect x="3" y="11" width="2" height="2" fill="#ffc4a8"/><rect x="11" y="11" width="2" height="2" fill="#ffc4a8"/><rect x="13" y="9" width="2" height="1" fill="#f4845f"/><rect x="14" y="8" width="2" height="1" fill="#f4845f"/><rect x="15" y="7" width="1" height="1" fill="#d4714a"/></svg>
+      <div class="m-speech">Hey! I'm SubCat 🐱 I turn your <strong>Mandarin and Cantonese scripts</strong> into properly split subtitle lines. Just paste a paragraph and I'll do the rest — no install, no server, <strong>fully offline</strong>. Everything stays in your browser.</div>
+    </div>
+  </div>
+
+  <div class="m-panel">
+    <div class="m-section"><span class="m-num">2</span> Getting Started</div>
+    <div class="m-cat-row flip">
+      <svg class="m-cat" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="0" width="2" height="2" fill="#f4845f"/><rect x="3" y="1" width="1" height="1" fill="#ffa07a"/><rect x="12" y="0" width="2" height="2" fill="#f4845f"/><rect x="12" y="1" width="1" height="1" fill="#ffa07a"/><rect x="2" y="2" width="12" height="3" fill="#f4845f"/><rect x="1" y="3" width="14" height="4" fill="#f4845f"/><rect x="5" y="4" width="6" height="3" fill="#ffc4a8"/><rect x="4" y="4" width="2" height="1" fill="#4a3728"/><rect x="11" y="4" width="1" height="2" fill="#4a3728"/><rect x="11" y="4" width="1" height="1" fill="#fff"/><rect x="7" y="5" width="2" height="1" fill="#e8636a"/><rect x="6" y="6" width="1" height="1" fill="#d4917a"/><rect x="9" y="6" width="1" height="1" fill="#d4917a"/><rect x="3" y="7" width="10" height="4" fill="#f4845f"/><rect x="5" y="8" width="6" height="3" fill="#ffc4a8"/><rect x="3" y="11" width="2" height="2" fill="#ffc4a8"/><rect x="11" y="11" width="2" height="2" fill="#ffc4a8"/><rect x="13" y="9" width="2" height="1" fill="#f4845f"/><rect x="14" y="8" width="2" height="1" fill="#f4845f"/><rect x="15" y="7" width="1" height="1" fill="#d4714a"/></svg>
+      <div class="m-speech">Open me in Chrome, Safari, Firefox, or Edge. You'll see two panels — <strong>paste your script on the left</strong>, and I'll show formatted subtitle lines on the right in real time. Each line gets a colour badge: <span class="m-tag mint">green</span> = good, <span class="m-tag" style="background:rgba(240,176,96,0.15);color:#c08030;">amber</span> = close, <span class="m-tag pink">red</span> = over limit.</div>
+    </div>
+  </div>
+
+  <div class="m-panel">
+    <div class="m-section"><span class="m-num">3</span> Settings</div>
+    <div class="m-cat-row">
+      <svg class="m-cat" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="0" width="2" height="2" fill="#f4845f"/><rect x="3" y="1" width="1" height="1" fill="#ffa07a"/><rect x="12" y="0" width="2" height="2" fill="#f4845f"/><rect x="12" y="1" width="1" height="1" fill="#ffa07a"/><rect x="2" y="2" width="12" height="3" fill="#f4845f"/><rect x="1" y="3" width="14" height="4" fill="#f4845f"/><rect x="5" y="4" width="6" height="3" fill="#ffc4a8"/><rect x="4" y="4" width="2" height="2" fill="#4a3728"/><rect x="4" y="4" width="1" height="1" fill="#fff"/><rect x="10" y="4" width="2" height="2" fill="#4a3728"/><rect x="10" y="4" width="1" height="1" fill="#fff"/><rect x="7" y="5" width="2" height="1" fill="#e8636a"/><rect x="6" y="6" width="1" height="1" fill="#d4917a"/><rect x="9" y="6" width="1" height="1" fill="#d4917a"/><rect x="3" y="7" width="10" height="4" fill="#f4845f"/><rect x="5" y="8" width="6" height="3" fill="#ffc4a8"/><rect x="3" y="11" width="2" height="2" fill="#ffc4a8"/><rect x="11" y="11" width="2" height="2" fill="#ffc4a8"/><rect x="13" y="9" width="2" height="1" fill="#f4845f"/><rect x="14" y="8" width="2" height="1" fill="#f4845f"/><rect x="15" y="7" width="1" height="1" fill="#d4714a"/></svg>
+      <div class="m-speech">Here's what each setting does!</div>
+    </div>
+    <div class="m-detail"><strong>File Name</strong> — The name used when you export. Defaults to "subtitles".<br><br><strong>Max Chars</strong> — Maximum width per line. Chinese characters = 1 unit, English = 0.5 units. Default: 18.<br><br><strong>Gap (sec)</strong> — Duration of each subtitle in the .SRT export. Default: 1 second. You'll adjust actual timing in your NLE.<br><br><strong>Start Timecode</strong> — Where the first subtitle begins. Format: HH:MM:SS,mmm</div>
+  </div>
+
+  <div class="m-panel">
+    <div class="m-section"><span class="m-num">4</span> Punctuation Mode</div>
+    <div class="m-cat-row flip">
+      <svg class="m-cat" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="0" width="2" height="2" fill="#f4845f"/><rect x="3" y="1" width="1" height="1" fill="#ffa07a"/><rect x="12" y="0" width="2" height="2" fill="#f4845f"/><rect x="12" y="1" width="1" height="1" fill="#ffa07a"/><rect x="2" y="2" width="12" height="3" fill="#f4845f"/><rect x="1" y="3" width="14" height="4" fill="#f4845f"/><rect x="5" y="4" width="6" height="3" fill="#ffc4a8"/><rect x="4" y="4" width="2" height="2" fill="#4a3728"/><rect x="4" y="4" width="1" height="1" fill="#fff"/><rect x="10" y="4" width="2" height="2" fill="#4a3728"/><rect x="10" y="4" width="1" height="1" fill="#fff"/><rect x="7" y="5" width="2" height="1" fill="#e8636a"/><rect x="5" y="6" width="2" height="1" fill="#ffc4a8"/><rect x="9" y="6" width="2" height="1" fill="#ffc4a8"/><rect x="3" y="7" width="10" height="4" fill="#f4845f"/><rect x="5" y="8" width="6" height="3" fill="#ffc4a8"/><rect x="3" y="11" width="2" height="2" fill="#ffc4a8"/><rect x="11" y="11" width="2" height="2" fill="#ffc4a8"/><rect x="13" y="9" width="2" height="1" fill="#f4845f"/><rect x="14" y="8" width="2" height="1" fill="#f4845f"/><rect x="15" y="7" width="1" height="1" fill="#d4714a"/></svg>
+      <div class="m-speech">I handle punctuation in three ways. Numbers like <strong>1.8</strong> and <strong>2,000</strong> are always safe — I won't break those!</div>
+    </div>
+    <div class="m-detail"><span class="m-tag">Strip all</span> Removes Chinese + English punctuation. The default.<br><br><span class="m-tag mint">Keep</span> Keeps everything as-is.<br><br><span class="m-tag lav">Strip CJK only</span> Removes Chinese punctuation, keeps English.</div>
+  </div>
+
+  <div class="m-panel">
+    <div class="m-section"><span class="m-num">5</span> Remove Dialogue Quotes</div>
+    <div class="m-cat-row">
+      <svg class="m-cat" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="0" width="2" height="2" fill="#f4845f"/><rect x="3" y="1" width="1" height="1" fill="#ffa07a"/><rect x="12" y="0" width="2" height="2" fill="#f4845f"/><rect x="12" y="1" width="1" height="1" fill="#ffa07a"/><rect x="2" y="2" width="12" height="3" fill="#f4845f"/><rect x="1" y="3" width="14" height="4" fill="#f4845f"/><rect x="5" y="4" width="6" height="3" fill="#ffc4a8"/><rect x="4" y="4" width="2" height="2" fill="#4a3728"/><rect x="4" y="4" width="1" height="1" fill="#fff"/><rect x="10" y="4" width="2" height="2" fill="#4a3728"/><rect x="10" y="4" width="1" height="1" fill="#fff"/><rect x="7" y="5" width="2" height="1" fill="#e8636a"/><rect x="6" y="6" width="1" height="1" fill="#d4917a"/><rect x="9" y="6" width="1" height="1" fill="#d4917a"/><rect x="3" y="7" width="10" height="4" fill="#f4845f"/><rect x="5" y="8" width="6" height="3" fill="#ffc4a8"/><rect x="3" y="11" width="2" height="2" fill="#ffc4a8"/><rect x="11" y="11" width="2" height="2" fill="#ffc4a8"/><rect x="13" y="9" width="2" height="1" fill="#f4845f"/><rect x="14" y="8" width="2" height="1" fill="#f4845f"/><rect x="15" y="7" width="1" height="1" fill="#d4714a"/></svg>
+      <div class="m-speech">When I spot <strong>「...」</strong> with attribution keywords like 說、表示、指出、認為 before it, I strip the whole attributed quote — from the nearest comma or sentence break onwards. Great for news scripts!</div>
+    </div>
+    <div class="m-example">
+      <div class="m-label">Input</div>
+      <div class="m-zh">小貓最喜歡曬太陽，牠每天都會在窗台上睡午覺，<span class="m-strike">主人表示：「牠就是全家最懶的那個，但大家都很愛牠」</span></div>
+      <div class="m-arrow">↓</div>
+      <div class="m-label">Result</div>
+      <div class="m-zh">小貓最喜歡曬太陽，牠每天都會在窗台上睡午覺</div>
+    </div>
+    <div class="m-detail">Standalone 「...」 without attribution? I keep those — they're treated as inline emphasis.</div>
+  </div>
+
+  <div class="m-panel">
+    <div class="m-section"><span class="m-num">6</span> How I Split Lines</div>
+    <div class="m-cat-row flip">
+      <svg class="m-cat" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="0" width="2" height="2" fill="#f4845f"/><rect x="3" y="1" width="1" height="1" fill="#ffa07a"/><rect x="12" y="0" width="2" height="2" fill="#f4845f"/><rect x="12" y="1" width="1" height="1" fill="#ffa07a"/><rect x="2" y="2" width="12" height="3" fill="#f4845f"/><rect x="1" y="3" width="14" height="4" fill="#f4845f"/><rect x="5" y="4" width="6" height="3" fill="#ffc4a8"/><rect x="4" y="4" width="2" height="2" fill="#4a3728"/><rect x="4" y="4" width="1" height="1" fill="#fff"/><rect x="10" y="4" width="2" height="2" fill="#4a3728"/><rect x="10" y="4" width="1" height="1" fill="#fff"/><rect x="7" y="5" width="2" height="1" fill="#e8636a"/><rect x="6" y="6" width="4" height="1" fill="#ffc4a8"/><rect x="3" y="7" width="10" height="4" fill="#f4845f"/><rect x="5" y="8" width="6" height="3" fill="#ffc4a8"/><rect x="3" y="11" width="2" height="2" fill="#ffc4a8"/><rect x="11" y="11" width="2" height="2" fill="#ffc4a8"/><rect x="13" y="9" width="2" height="1" fill="#f4845f"/><rect x="14" y="8" width="2" height="1" fill="#f4845f"/><rect x="15" y="7" width="1" height="1" fill="#d4714a"/></svg>
+      <div class="m-speech">I'm pretty smart about this! Here's my three-step process:</div>
+    </div>
+    <div class="m-detail"><strong>① ENPS Stripping</strong><br>I remove newsroom markup — {curly braces}, &lt;angle brackets&gt;, [square brackets], ((double parens)). Asterisks like *TAKE VO* are stripped but the text inside is kept.<br><br><strong>② Punctuation Splitting</strong><br>I split at natural pauses — commas, periods, colons, etc. The enumeration comma 、is never a break point, and it always stays at the end of a line, never the beginning.<br><br><strong>③ Word-Aware Width Splitting</strong><br>Lines still too long get split using your browser's built-in Chinese word segmentation. I understand Mandarin and Cantonese word boundaries — I won't break compounds like 圖書館 or 幼稚園 in half.</div>
+    <div class="m-cat-row">
+      <svg class="m-cat" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="0" width="2" height="2" fill="#f4845f"/><rect x="3" y="1" width="1" height="1" fill="#ffa07a"/><rect x="12" y="0" width="2" height="2" fill="#f4845f"/><rect x="12" y="1" width="1" height="1" fill="#ffa07a"/><rect x="2" y="2" width="12" height="3" fill="#f4845f"/><rect x="1" y="3" width="14" height="4" fill="#f4845f"/><rect x="5" y="4" width="6" height="3" fill="#ffc4a8"/><rect x="4" y="4" width="2" height="2" fill="#4a3728"/><rect x="4" y="4" width="1" height="1" fill="#fff"/><rect x="10" y="4" width="2" height="2" fill="#4a3728"/><rect x="10" y="4" width="1" height="1" fill="#fff"/><rect x="7" y="5" width="2" height="1" fill="#e8636a"/><rect x="6" y="6" width="1" height="1" fill="#d4917a"/><rect x="9" y="6" width="1" height="1" fill="#d4917a"/><rect x="3" y="7" width="10" height="4" fill="#f4845f"/><rect x="5" y="8" width="6" height="3" fill="#ffc4a8"/><rect x="3" y="11" width="2" height="2" fill="#ffc4a8"/><rect x="11" y="11" width="2" height="2" fill="#ffc4a8"/><rect x="13" y="9" width="2" height="1" fill="#f4845f"/><rect x="14" y="8" width="2" height="1" fill="#f4845f"/><rect x="15" y="7" width="1" height="1" fill="#d4714a"/></svg>
+      <div class="m-speech">I also protect <strong>English blocks</strong>, <strong>bracketed content</strong> (()「」《》), and when a line is only slightly over, I balance it into two even halves instead of cutting hard. ✨</div>
+    </div>
+  </div>
+
+  <div class="m-panel">
+    <div class="m-section"><span class="m-num">7</span> Merging Lines</div>
+    <div class="m-cat-row flip">
+      <svg class="m-cat" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="0" width="2" height="2" fill="#f4845f"/><rect x="3" y="1" width="1" height="1" fill="#ffa07a"/><rect x="12" y="0" width="2" height="2" fill="#f4845f"/><rect x="12" y="1" width="1" height="1" fill="#ffa07a"/><rect x="2" y="2" width="12" height="3" fill="#f4845f"/><rect x="1" y="3" width="14" height="4" fill="#f4845f"/><rect x="5" y="4" width="6" height="3" fill="#ffc4a8"/><rect x="4" y="4" width="2" height="2" fill="#4a3728"/><rect x="4" y="4" width="1" height="1" fill="#fff"/><rect x="10" y="4" width="2" height="1" fill="#4a3728"/><rect x="10" y="4" width="1" height="1" fill="#fff"/><rect x="7" y="5" width="2" height="1" fill="#e8636a"/><rect x="6" y="6" width="1" height="1" fill="#d4917a"/><rect x="9" y="6" width="1" height="1" fill="#d4917a"/><rect x="3" y="7" width="10" height="4" fill="#f4845f"/><rect x="5" y="8" width="6" height="3" fill="#ffc4a8"/><rect x="3" y="11" width="2" height="2" fill="#ffc4a8"/><rect x="11" y="11" width="2" height="2" fill="#ffc4a8"/><rect x="13" y="9" width="2" height="1" fill="#f4845f"/><rect x="14" y="8" width="2" height="1" fill="#f4845f"/><rect x="15" y="7" width="1" height="1" fill="#d4714a"/></svg>
+      <div class="m-speech">Two short lines that should be one? Hover over a line to see the <span class="m-tag">+</span> button. Click it on one line, then on its neighbour to merge them. They'll get a <span class="m-tag mint">green dashed outline</span>.<br><br>Merges are <strong>global rules</strong> — the same pair merges everywhere. Click <span class="m-tag pink">−</span> to unmerge a specific instance.</div>
+    </div>
+  </div>
+
+  <div class="m-panel">
+    <div class="m-section"><span class="m-num">8</span> Preview & Navigation</div>
+    <div class="m-cat-row">
+      <svg class="m-cat" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="0" width="2" height="2" fill="#f4845f"/><rect x="3" y="1" width="1" height="1" fill="#ffa07a"/><rect x="12" y="0" width="2" height="2" fill="#f4845f"/><rect x="12" y="1" width="1" height="1" fill="#ffa07a"/><rect x="2" y="2" width="12" height="3" fill="#f4845f"/><rect x="1" y="3" width="14" height="4" fill="#f4845f"/><rect x="5" y="4" width="6" height="3" fill="#ffc4a8"/><rect x="4" y="4" width="2" height="2" fill="#4a3728"/><rect x="4" y="4" width="1" height="1" fill="#fff"/><rect x="10" y="4" width="2" height="2" fill="#4a3728"/><rect x="10" y="4" width="1" height="1" fill="#fff"/><rect x="7" y="5" width="2" height="1" fill="#e8636a"/><rect x="6" y="6" width="1" height="1" fill="#d4917a"/><rect x="9" y="6" width="1" height="1" fill="#d4917a"/><rect x="3" y="7" width="10" height="4" fill="#f4845f"/><rect x="5" y="8" width="6" height="3" fill="#ffc4a8"/><rect x="3" y="11" width="2" height="2" fill="#ffc4a8"/><rect x="11" y="11" width="2" height="2" fill="#ffc4a8"/><rect x="13" y="9" width="2" height="1" fill="#f4845f"/><rect x="14" y="8" width="2" height="1" fill="#f4845f"/><rect x="15" y="7" width="1" height="1" fill="#d4714a"/></svg>
+      <div class="m-speech"><strong>Click any line</strong> in the preview and I'll jump to that exact spot in your script on the left. Super handy for long scripts!<br><br>The stats bar below shows: total lines, over-limit count, average length, and estimated duration.</div>
+    </div>
+  </div>
+
+  <div class="m-panel">
+    <div class="m-section"><span class="m-num">9</span> Exporting</div>
+    <div class="m-detail"><span class="m-tag">Export .SRT</span> Standard subtitle file with sequential timecodes. UTF-8 with BOM for NLE compatibility.<br><br><span class="m-tag mint">Export .TXT</span> Plain text, one line per line.<br><br><span class="m-tag lav">Copy Lines</span> Copies everything to your clipboard.</div>
+    <div class="m-cat-row">
+      <svg class="m-cat" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="0" width="2" height="2" fill="#f4845f"/><rect x="3" y="1" width="1" height="1" fill="#ffa07a"/><rect x="12" y="0" width="2" height="2" fill="#f4845f"/><rect x="12" y="1" width="1" height="1" fill="#ffa07a"/><rect x="2" y="2" width="12" height="3" fill="#f4845f"/><rect x="1" y="3" width="14" height="4" fill="#f4845f"/><rect x="5" y="4" width="6" height="3" fill="#ffc4a8"/><rect x="4" y="4" width="2" height="2" fill="#4a3728"/><rect x="4" y="4" width="1" height="1" fill="#fff"/><rect x="10" y="4" width="2" height="2" fill="#4a3728"/><rect x="10" y="4" width="1" height="1" fill="#fff"/><rect x="7" y="5" width="2" height="1" fill="#e8636a"/><rect x="6" y="6" width="1" height="1" fill="#d4917a"/><rect x="9" y="6" width="1" height="1" fill="#d4917a"/><rect x="3" y="7" width="10" height="4" fill="#f4845f"/><rect x="5" y="8" width="6" height="3" fill="#ffc4a8"/><rect x="3" y="11" width="2" height="2" fill="#ffc4a8"/><rect x="11" y="11" width="2" height="2" fill="#ffc4a8"/><rect x="13" y="9" width="2" height="1" fill="#f4845f"/><rect x="14" y="8" width="2" height="1" fill="#f4845f"/><rect x="15" y="7" width="1" height="1" fill="#d4714a"/></svg>
+      <div class="m-speech">The .SRT timecodes are evenly-spaced placeholders — you'll adjust them to your video timing in your NLE. I'm a line formatter, not a timing tool! 😸</div>
+    </div>
+  </div>
+
+  <div class="m-panel">
+    <div class="m-section"><span class="m-num">10</span> Undo & Redo</div>
+    <div class="m-cat-row">
+      <svg class="m-cat" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="0" width="2" height="2" fill="#f4845f"/><rect x="3" y="1" width="1" height="1" fill="#ffa07a"/><rect x="12" y="0" width="2" height="2" fill="#f4845f"/><rect x="12" y="1" width="1" height="1" fill="#ffa07a"/><rect x="2" y="2" width="12" height="3" fill="#f4845f"/><rect x="1" y="3" width="14" height="4" fill="#f4845f"/><rect x="5" y="4" width="6" height="3" fill="#ffc4a8"/><rect x="4" y="4" width="2" height="2" fill="#4a3728"/><rect x="4" y="4" width="1" height="1" fill="#fff"/><rect x="10" y="4" width="2" height="2" fill="#4a3728"/><rect x="10" y="4" width="1" height="1" fill="#fff"/><rect x="7" y="5" width="2" height="1" fill="#e8636a"/><rect x="6" y="6" width="1" height="1" fill="#d4917a"/><rect x="9" y="6" width="1" height="1" fill="#d4917a"/><rect x="3" y="7" width="10" height="4" fill="#f4845f"/><rect x="5" y="8" width="6" height="3" fill="#ffc4a8"/><rect x="3" y="11" width="2" height="2" fill="#ffc4a8"/><rect x="11" y="11" width="2" height="2" fill="#ffc4a8"/><rect x="13" y="9" width="2" height="1" fill="#f4845f"/><rect x="14" y="8" width="2" height="1" fill="#f4845f"/><rect x="15" y="7" width="1" height="1" fill="#d4714a"/></svg>
+      <div class="m-speech">I remember up to <strong>50 states</strong> — text edits, merges, everything. Use the buttons or shortcuts:</div>
+    </div>
+    <div style="padding:6px 0;">
+      <div class="m-shortcut"><span class="m-kbd">Ctrl</span><span class="m-kbd">Z</span> <span class="m-shortcut-label">Undo</span></div>
+      <div class="m-shortcut"><span class="m-kbd">Ctrl</span><span class="m-kbd">Shift</span><span class="m-kbd">Z</span> <span class="m-shortcut-label">Redo</span></div>
+      <div class="m-shortcut"><span class="m-kbd">Ctrl</span><span class="m-kbd">Y</span> <span class="m-shortcut-label">Redo (alt)</span></div>
+    </div>
+    <div class="m-detail" style="font-size:12px;">On Mac, use <strong>Cmd</strong> instead of Ctrl.</div>
+  </div>
+
+  <div class="m-divider"></div>
+
+  <div class="m-panel">
+    <div class="m-section">💡 Tips</div>
+    <div class="m-cat-row">
+      <svg class="m-cat" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="0" width="2" height="2" fill="#f4845f"/><rect x="3" y="1" width="1" height="1" fill="#ffa07a"/><rect x="12" y="0" width="2" height="2" fill="#f4845f"/><rect x="12" y="1" width="1" height="1" fill="#ffa07a"/><rect x="2" y="2" width="12" height="3" fill="#f4845f"/><rect x="1" y="3" width="14" height="4" fill="#f4845f"/><rect x="5" y="4" width="6" height="3" fill="#ffc4a8"/><rect x="4" y="4" width="2" height="2" fill="#4a3728"/><rect x="4" y="4" width="1" height="1" fill="#fff"/><rect x="10" y="4" width="2" height="2" fill="#4a3728"/><rect x="10" y="4" width="1" height="1" fill="#fff"/><rect x="7" y="5" width="2" height="1" fill="#e8636a"/><rect x="6" y="6" width="1" height="1" fill="#d4917a"/><rect x="9" y="6" width="1" height="1" fill="#d4917a"/><rect x="3" y="7" width="10" height="4" fill="#f4845f"/><rect x="5" y="8" width="6" height="3" fill="#ffc4a8"/><rect x="3" y="11" width="2" height="2" fill="#ffc4a8"/><rect x="11" y="11" width="2" height="2" fill="#ffc4a8"/><rect x="13" y="9" width="2" height="1" fill="#f4845f"/><rect x="14" y="8" width="2" height="1" fill="#f4845f"/><rect x="15" y="7" width="1" height="1" fill="#d4714a"/></svg>
+      <div class="m-speech">A few things before you go~</div>
+    </div>
+    <div class="m-detail">Separate paragraphs with <strong>blank lines</strong> — each one is processed independently.<br><br>For the best word-aware splitting, use a modern browser — <strong>Chrome 87+</strong>, <strong>Safari 15.4+</strong>, or <strong>Firefox 125+</strong>.<br><br>Everything runs offline. Your script never leaves your device.<br><br>Oh, and there's a fish somewhere. I'm hungry. You know what to do. 🐟</div>
+  </div>
+
+  <div class="m-footer">made with 🐱 by SubCat</div>
+</div>
+</div>
+
 </body>
 </html>

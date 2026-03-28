@@ -998,6 +998,7 @@ function smartSplitLine(text, maxW) {
 }
 
 // === ENPS STRIPPING ===
+// stripENPS handles single-line per-paragraph cleanup
 function stripENPS(text) {
   return text
     .replace(/\{[^}]*\}/g, '')
@@ -1007,6 +1008,17 @@ function stripENPS(text) {
     .replace(/\*/g, '')
     .replace(/\s{2,}/g, ' ')
     .trim();
+}
+
+// stripENPS_multiline runs on raw input BEFORE paragraph splitting
+// Handles <...>, {...}, [...], ((...)) that span multiple lines
+function stripENPS_multiline(text) {
+  return text
+    .replace(/\{[^}]*\}/gs, '')
+    .replace(/<[^>]*>/gs, '')
+    .replace(/\[[^\]]*\]/gs, '')
+    .replace(/\(\([^)]*\)\)/gs, '')
+    .replace(/\*/g, '');
 }
 
 // === DIALOGUE QUOTE STRIPPING ===
@@ -1118,7 +1130,10 @@ function processScript() {
     return [];
   }
 
-  const paras = raw.split(/\n+/).filter(p => p.trim());
+  // Strip multiline ENPS markup before splitting into paragraphs
+  const cleaned = stripENPS_multiline(raw);
+
+  const paras = cleaned.split(/\n+/).filter(p => p.trim());
   let allLines = [];
 
   for (const p of paras) {
@@ -1343,7 +1358,8 @@ function getRawSplitLines() {
   const maxW = parseInt(document.getElementById('maxChars').value) || 18;
   const punctMode = document.getElementById('punctMode').value;
   const dialogueStrip = document.getElementById('stripDialogue').checked;
-  const paras = raw.split(/\n+/).filter(p => p.trim());
+  const cleaned = stripENPS_multiline(raw);
+  const paras = cleaned.split(/\n+/).filter(p => p.trim());
   const lines = [];
   for (const p of paras) {
     let stripped = stripENPS(p.trim());
